@@ -100,26 +100,26 @@ const getStatusBadge = (status: string) => {
   switch (status) {
     case 'hoatDong':
       return (
-        <Badge variant="default" className="gap-1">
+        <Badge className="gap-1 bg-green-100 text-green-800 hover:bg-green-100 border-0 font-medium">
           <CircleCheck className="h-3 w-3" />
           Hoạt động
         </Badge>
       )
     case 'hetHan':
       return (
-        <Badge variant="destructive" className="gap-1">
+        <Badge className="gap-1 bg-red-100 text-red-800 hover:bg-red-100 border-0 font-medium">
           <Calendar className="h-3 w-3" />
           Hết hạn
         </Badge>
       )
     case 'daHuy':
       return (
-        <Badge variant="secondary" className="gap-1">
+        <Badge className="gap-1 bg-gray-100 text-gray-700 hover:bg-gray-100 border-0 font-medium">
           Đã hủy
         </Badge>
       )
     default:
-      return <Badge variant="outline">{status}</Badge>
+      return <Badge className="gap-1 bg-gray-100 text-gray-700 hover:bg-gray-100 border-0 font-medium">{status}</Badge>
   }
 }
 
@@ -143,9 +143,9 @@ function DragHandle({ id }: { id: string }) {
       {...listeners}
       variant="ghost"
       size="icon"
-      className="text-muted-foreground size-7 hover:bg-transparent"
+      className="text-gray-400 size-7 hover:bg-gray-100 hover:text-gray-600 transition-colors"
     >
-      <GripVertical className="text-muted-foreground size-3" />
+      <GripVertical className="size-4" />
       <span className="sr-only">Kéo để sắp xếp</span>
     </Button>
   )
@@ -314,14 +314,14 @@ const createColumns = (props: HopDongTableProps): ColumnDef<HopDong>[] => [
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 flex size-8 transition-colors"
             size="icon"
           >
             <MoreVertical className="size-4" />
             <span className="sr-only">Mở menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end" className="w-48 shadow-lg border border-gray-200">
           <DropdownMenuItem onClick={() => props.onView(row.original)}>
             <Eye className="mr-2 h-4 w-4" />
             Xem chi tiết
@@ -469,23 +469,23 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
   }
 
   return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+    <div className="w-full space-y-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
         {/* Tìm kiếm và Bộ lọc bên trái */}
         <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
           <div className="flex-1 sm:max-w-sm">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Tìm kiếm theo mã hợp đồng..."
                 value={searchTerm || ''}
                 onChange={(e) => onSearchChange?.(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
               />
             </div>
           </div>
           <Select value={statusFilter} onValueChange={onStatusChange}>
-            <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px] bg-gray-50 border-gray-300 hover:border-gray-400 transition-colors">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
             <SelectContent>
@@ -496,7 +496,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
             </SelectContent>
           </Select>
           <Select value={toaNhaFilter} onValueChange={onToaNhaChange}>
-            <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px] bg-gray-50 border-gray-300 hover:border-gray-400 transition-colors">
               <SelectValue placeholder="Tòa nhà" />
             </SelectTrigger>
             <SelectContent>
@@ -514,14 +514,14 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="hover:bg-gray-100 transition-colors">
                 <Columns className="mr-2 h-4 w-4" />
                 <span className="hidden lg:inline">Tùy chỉnh cột</span>
                 <span className="lg:hidden">Cột</span>
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 shadow-lg border border-gray-200">
               {table
                 .getAllColumns()
                 .filter(
@@ -548,7 +548,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
         </div>
       </div>
       
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
         <DndContext
           collisionDetection={closestCenter}
           modifiers={[restrictToVerticalAxis]}
@@ -557,12 +557,12 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
           id={sortableId}
         >
           <Table>
-            <TableHeader className="bg-muted sticky top-0 z-10">
+            <TableHeader className="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-10 border-b border-gray-200">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
+                      <TableHead key={header.id} colSpan={header.colSpan} className="font-bold text-gray-700 text-sm">
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -589,9 +589,12 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
+                    className="h-24 text-center text-gray-500"
                   >
-                    Không có dữ liệu
+                    <div className="flex flex-col items-center justify-center">
+                      <FileText className="h-8 w-8 text-gray-300 mb-2" />
+                      <span>Không có dữ liệu</span>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
@@ -600,14 +603,14 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
         </DndContext>
       </div>
       
-      <div className="flex items-center justify-between px-4">
-        <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+      <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-gray-200 rounded-b-lg">
+        <div className="text-gray-600 hidden flex-1 text-sm lg:flex font-medium">
           Đã chọn {table.getFilteredSelectedRowModel().rows.length} trong{" "}
           {table.getFilteredRowModel().rows.length} hàng
         </div>
         <div className="flex w-full items-center gap-8 lg:w-fit">
-          <div className="hidden items-center gap-2 lg:flex">
-            <Label htmlFor="rows-per-page" className="text-sm font-medium">
+          <div className="hidden items-center gap-3 lg:flex">
+            <Label htmlFor="rows-per-page" className="text-sm font-medium text-gray-700">
               Số hàng mỗi trang
             </Label>
             <Select
@@ -616,7 +619,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
                 table.setPageSize(Number(value))
               }}
             >
-              <SelectTrigger size="sm" className="w-20" id="rows-per-page">
+              <SelectTrigger size="sm" className="w-20 bg-gray-50 border-gray-300 hover:border-gray-400" id="rows-per-page">
                 <SelectValue
                   placeholder={table.getState().pagination.pageSize}
                 />
@@ -630,14 +633,14 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
+          <div className="flex w-fit items-center justify-center text-sm font-bold text-gray-700">
             Trang {table.getState().pagination.pageIndex + 1} /{" "}
             {table.getPageCount()}
           </div>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
+              className="hidden h-8 w-8 p-0 lg:flex hover:bg-gray-100 transition-colors"
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
             >
@@ -646,7 +649,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
             </Button>
             <Button
               variant="outline"
-              className="size-8"
+              className="size-8 hover:bg-gray-100 transition-colors"
               size="icon"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
@@ -656,7 +659,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
             </Button>
             <Button
               variant="outline"
-              className="size-8"
+              className="size-8 hover:bg-gray-100 transition-colors"
               size="icon"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
@@ -666,7 +669,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
             </Button>
             <Button
               variant="outline"
-              className="hidden size-8 lg:flex"
+              className="hidden size-8 lg:flex hover:bg-gray-100 transition-colors"
               size="icon"
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
@@ -692,7 +695,7 @@ function HopDongCellViewer({
   return (
     <Button 
       variant="link" 
-      className="text-foreground w-fit px-0 text-left font-medium"
+      className="text-blue-600 hover:text-blue-800 hover:underline w-fit px-0 text-left font-semibold transition-colors"
       onClick={() => onView(hopDong)}
     >
       {hopDong.maHopDong}

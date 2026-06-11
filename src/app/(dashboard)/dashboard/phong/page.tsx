@@ -228,52 +228,58 @@ export default function PhongPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+        <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-64 animate-pulse"></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-zinc-200 dark:bg-zinc-800 rounded-xl h-24 animate-pulse"></div>
+          ))}
         </div>
-        <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        <div className="bg-zinc-200 dark:bg-zinc-800 rounded-xl h-96 animate-pulse"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Quản lý phòng</h1>
-          <p className="text-xs md:text-sm text-gray-600">Danh sách tất cả phòng trong hệ thống</p>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Quản lý phòng</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Danh sách tất cả phòng trong hệ thống</p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <Button 
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={cache.isRefreshing}
+            className="flex-1 sm:flex-none border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            {cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}
+            <RefreshCw className={`h-4 w-4 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline ml-2 text-sm">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
-     
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => setEditingPhong(null)} className="w-full sm:w-auto">
+              <Button
+                size="sm"
+                onClick={() => setEditingPhong(null)}
+                className="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+              >
                 <Plus className="h-4 w-4 mr-2" />
-                Thêm phòng
+                <span>Thêm phòng</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto w-[95vw] md:w-full">
               <DialogHeader>
-                <DialogTitle className="text-base md:text-lg">
+                <DialogTitle className="text-lg">
                   {editingPhong ? 'Chỉnh sửa phòng' : 'Thêm phòng mới'}
                 </DialogTitle>
-                <DialogDescription className="text-xs md:text-sm">
+                <DialogDescription className="text-sm">
                   {editingPhong ? 'Cập nhật thông tin phòng' : 'Nhập thông tin phòng mới'}
                 </DialogDescription>
               </DialogHeader>
-              
-              <PhongForm 
+
+              <PhongForm
                 phong={editingPhong}
                 toaNhaList={toaNhaList}
                 onClose={() => setIsDialogOpen(false)}
@@ -290,64 +296,112 @@ export default function PhongPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
-        <Card className="p-2 md:p-3">
-          <div className="flex items-center justify-between">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng số phòng</p>
-              <p className="text-lg md:text-xl font-bold">{phongList.length}</p>
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Tổng số phòng</p>
+              <p className="text-2xl lg:text-3xl font-bold text-zinc-900 dark:text-white mt-2">{phongList.length}</p>
             </div>
-            <Home className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
+            <div className="p-2.5 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+              <Home className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-3">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Phòng trống</p>
-              <p className="text-lg md:text-xl font-bold text-green-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Phòng trống</p>
+              <p className="text-2xl lg:text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
                 {phongList.filter(p => p.trangThai === 'trong').length}
               </p>
             </div>
-            <Users className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
+            <div className="p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/20">
+              <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-3">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Đang thuê</p>
-              <p className="text-lg md:text-xl font-bold text-blue-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Đang thuê</p>
+              <p className="text-2xl lg:text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">
                 {phongList.filter(p => p.trangThai === 'dangThue').length}
               </p>
             </div>
-            <Users className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
+            <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-3">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-red-200 dark:hover:border-red-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Bảo trì</p>
-              <p className="text-lg md:text-xl font-bold text-red-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bảo trì</p>
+              <p className="text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400 mt-2">
                 {phongList.filter(p => p.trangThai === 'baoTri').length}
               </p>
             </div>
-            <Users className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
+            <div className="p-2.5 rounded-lg bg-red-100 dark:bg-red-900/20">
+              <Users className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Desktop Table View */}
-      <Card className="hidden md:block">
-        <CardHeader>
-          <CardTitle>Danh sách phòng</CardTitle>
-          <CardDescription>
-            {filteredPhong.length} phòng được tìm thấy
-          </CardDescription>
+      <Card className="hidden md:block border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <CardHeader className="border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg">Danh sách phòng</CardTitle>
+              <CardDescription>
+                {filteredPhong.length} phòng được tìm thấy
+              </CardDescription>
+            </div>
+            <div className="flex gap-3 flex-1 max-w-2xl">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                <Input
+                  placeholder="Tìm kiếm phòng..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <Select value={selectedToaNha} onValueChange={setSelectedToaNha}>
+                <SelectTrigger className="w-40 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
+                  <SelectValue placeholder="Tòa nhà" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả tòa nhà</SelectItem>
+                  {toaNhaList.map((toaNha) => (
+                    <SelectItem key={toaNha._id} value={toaNha._id!}>
+                      {toaNha.tenToaNha}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedTrangThai} onValueChange={setSelectedTrangThai}>
+                <SelectTrigger className="w-32 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
+                  <SelectValue placeholder="Trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="trong">Trống</SelectItem>
+                  <SelectItem value="daDat">Đã đặt</SelectItem>
+                  <SelectItem value="dangThue">Đang thuê</SelectItem>
+                  <SelectItem value="baoTri">Bảo trì</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <PhongDataTable 
+        <CardContent className="p-0">
+          <PhongDataTable
             data={filteredPhong}
             toaNhaList={toaNhaList}
             onEdit={handleEdit}
@@ -366,68 +420,67 @@ export default function PhongPage() {
       </Card>
 
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
-        <div className="flex justify-between items-center">
-          <h2 className="text-base font-semibold">Danh sách phòng</h2>
-          <span className="text-xs text-gray-600">{filteredPhong.length} phòng</span>
+      <div className="md:hidden space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-3">Danh sách phòng</h2>
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <Input
+                placeholder="Tìm kiếm phòng..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={selectedToaNha} onValueChange={setSelectedToaNha}>
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
+                  <SelectValue placeholder="Tòa nhà" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả tòa nhà</SelectItem>
+                  {toaNhaList.map((toaNha) => (
+                    <SelectItem key={toaNha._id} value={toaNha._id!}>
+                      {toaNha.tenToaNha}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedTrangThai} onValueChange={setSelectedTrangThai}>
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
+                  <SelectValue placeholder="Trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="trong">Trống</SelectItem>
+                  <SelectItem value="daDat">Đã đặt</SelectItem>
+                  <SelectItem value="dangThue">Đang thuê</SelectItem>
+                  <SelectItem value="baoTri">Bảo trì</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
-        {/* Mobile Filters */}
-        <div className="space-y-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm phòng..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-sm"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={selectedToaNha} onValueChange={setSelectedToaNha}>
-              <SelectTrigger className="text-sm">
-                <SelectValue placeholder="Tòa nhà" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-sm">Tất cả tòa nhà</SelectItem>
-                {toaNhaList.map((toaNha) => (
-                  <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
-                    {toaNha.tenToaNha}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedTrangThai} onValueChange={setSelectedTrangThai}>
-              <SelectTrigger className="text-sm">
-                <SelectValue placeholder="Trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-sm">Tất cả</SelectItem>
-                <SelectItem value="trong" className="text-sm">Trống</SelectItem>
-                <SelectItem value="daDat" className="text-sm">Đã đặt</SelectItem>
-                <SelectItem value="dangThue" className="text-sm">Đang thuê</SelectItem>
-                <SelectItem value="baoTri" className="text-sm">Bảo trì</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
         {filteredPhong.length === 0 ? (
-          <Card className="p-6 text-center">
-            <Home className="h-10 w-10 mx-auto text-gray-400 mb-3" />
-            <h3 className="text-base font-medium text-gray-900 mb-1">Không tìm thấy phòng nào</h3>
-            <p className="text-sm text-gray-600">Thử thay đổi bộ lọc hoặc tìm kiếm khác</p>
-          </Card>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-8 text-center">
+            <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 w-fit mx-auto mb-3">
+              <Home className="h-6 w-6 text-zinc-400" />
+            </div>
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">Không tìm thấy phòng nào</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Thử thay đổi bộ lọc hoặc tìm kiếm khác</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-4">
             {filteredPhong.map((phong) => {
               const getTrangThaiColor = (trangThai: string) => {
                 switch (trangThai) {
-                  case 'trong': return 'bg-green-100 text-green-800';
-                  case 'daDat': return 'bg-yellow-100 text-yellow-800';
-                  case 'dangThue': return 'bg-blue-100 text-blue-800';
-                  case 'baoTri': return 'bg-red-100 text-red-800';
-                  default: return 'bg-gray-100 text-gray-800';
+                  case 'trong': return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300';
+                  case 'daDat': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
+                  case 'dangThue': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+                  case 'baoTri': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
+                  default: return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300';
                 }
               };
 
@@ -442,36 +495,36 @@ export default function PhongPage() {
               };
 
               return (
-                <Card key={phong._id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex justify-between items-start mb-2">
+                <div key={phong._id} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900/30">
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-base">{phong.maPhong}</h3>
-                        <p className="text-xs text-gray-600">Tầng {phong.tang} • {phong.dienTich}m²</p>
+                        <h3 className="font-semibold text-lg text-zinc-900 dark:text-white">{phong.maPhong}</h3>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Tầng {phong.tang} • {phong.dienTich}m²</p>
                       </div>
-                      <Badge className={`${getTrangThaiColor(phong.trangThai)} text-xs`}>
+                      <Badge className={`${getTrangThaiColor(phong.trangThai)} text-xs font-medium`}>
                         {getTrangThaiText(phong.trangThai)}
                       </Badge>
                     </div>
-                    
-                    <div className="space-y-1.5 mb-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Giá thuê:</span>
-                        <span className="font-semibold text-green-600">
+
+                    <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-gradient-to-r from-orange-50 to-rose-50 dark:from-orange-900/10 dark:to-rose-900/10 rounded-lg border border-orange-100 dark:border-orange-900/20">
+                      <div>
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Giá thuê</div>
+                        <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {new Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND'
                           }).format(phong.giaThue)}
-                        </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Tiền cọc:</span>
-                        <span className="font-medium text-orange-600">
+                      <div>
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Tiền cọc</div>
+                        <div className="text-sm font-bold text-orange-600 dark:text-orange-400">
                           {new Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND'
                           }).format(phong.tienCoc)}
-                        </span>
+                        </div>
                       </div>
                     </div>
 
@@ -479,34 +532,32 @@ export default function PhongPage() {
                     {(() => {
                       const phongData = phong as any;
                       const hopDong = phongData.hopDongHienTai;
-                      
+
                       if (hopDong && hopDong.khachThueId && hopDong.khachThueId.length > 0) {
                         const nguoiDaiDien = hopDong.nguoiDaiDien;
                         const soLuongKhachThue = hopDong.khachThueId.length;
-                        
+
                         return (
-                          <div className="mb-3 p-2 bg-blue-50 rounded-md border border-blue-200">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Users className="h-3.5 w-3.5 text-blue-600" />
-                              <span className="text-xs font-medium text-blue-900">Người thuê</span>
+                          <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-900/30">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <span className="text-xs font-medium text-blue-900 dark:text-blue-300">Người thuê</span>
                             </div>
-                            <div className="text-sm text-gray-900 font-medium">
+                            <div className="text-sm font-semibold text-zinc-900 dark:text-white">
                               {nguoiDaiDien?.hoTen || 'N/A'}
                             </div>
                             {nguoiDaiDien?.soDienThoai && (
-                              <div className="text-xs text-gray-600">
+                              <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                                 {nguoiDaiDien.soDienThoai}
                               </div>
                             )}
                             {soLuongKhachThue > 1 && (
-                              <Button
-                                variant="link"
-                                size="sm"
-                                className="text-xs text-blue-600 hover:text-blue-700 h-auto p-0 mt-0.5"
+                              <button
                                 onClick={() => handleViewTenants(phong)}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium mt-2"
                               >
                                 +{soLuongKhachThue - 1} người khác
-                              </Button>
+                              </button>
                             )}
                           </div>
                         );
@@ -515,66 +566,61 @@ export default function PhongPage() {
                     })()}
 
                     {phong.anhPhong && phong.anhPhong.length > 0 && (
-                      <div className="mb-3">
-                        <img 
-                          src={phong.anhPhong[0]} 
+                      <div className="mb-3 cursor-pointer" onClick={() => handleViewImages(phong)}>
+                        <img
+                          src={phong.anhPhong[0]}
                           alt={phong.maPhong}
-                          className="w-full h-32 object-cover rounded-md"
-                          onClick={() => handleViewImages(phong)}
+                          className="w-full h-32 object-cover rounded-lg hover:opacity-90 transition-opacity"
                         />
                         {phong.anhPhong.length > 1 && (
-                          <div className="text-xs text-gray-600 mt-1">
+                          <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1.5">
                             +{phong.anhPhong.length - 1} ảnh khác
                           </div>
                         )}
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        {phong.anhPhong && phong.anhPhong.length > 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewImages(phong)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            title="Xem ảnh phòng"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
+                    <div className="flex gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                      {phong.anhPhong && phong.anhPhong.length > 0 && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            const publicUrl = `${window.location.origin}/xem-phong`;
-                            navigator.clipboard.writeText(publicUrl);
-                            toast.success('Đã sao chép link trang xem phòng');
-                          }}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          title="Copy link trang xem phòng"
+                          onClick={() => handleViewImages(phong)}
+                          className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-200 dark:border-blue-900/30"
                         >
-                          <Copy className="h-3.5 w-3.5" />
+                          <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(phong)}
-                          className="flex-1 text-xs"
-                        >
-                          <Edit className="h-3.5 w-3.5 mr-1" />
-                          Sửa
-                        </Button>
-                        <DeleteConfirmPopover
-                          onConfirm={() => handleDelete(phong._id!)}
-                          title="Xóa phòng"
-                          description="Bạn có chắc chắn muốn xóa phòng này?"
-                          className="text-black hover:text-red-700 hover:bg-red-50"
-                        />
-                      </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const publicUrl = `${window.location.origin}/xem-phong`;
+                          navigator.clipboard.writeText(publicUrl);
+                          toast.success('Đã sao chép link trang xem phòng');
+                        }}
+                        className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-emerald-200 dark:border-emerald-900/30"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(phong)}
+                        className="flex-1 text-xs border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                      >
+                        <Edit className="h-3.5 w-3.5 mr-1.5" />
+                        Sửa
+                      </Button>
+                      <DeleteConfirmPopover
+                        onConfirm={() => handleDelete(phong._id!)}
+                        title="Xóa phòng"
+                        description="Bạn có chắc chắn muốn xóa phòng này?"
+                        className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -583,25 +629,25 @@ export default function PhongPage() {
 
       {/* Image Viewer Dialog */}
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden w-[95vw] md:w-full">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base md:text-lg">
-              <Image className="h-4 w-4 md:h-5 md:w-5" />
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden w-[95vw] md:w-full bg-zinc-900 dark:bg-zinc-950 border-zinc-800">
+          <DialogHeader className="border-b border-zinc-800">
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Image className="h-5 w-5" />
               Ảnh phòng {viewingPhongName}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="flex-1 overflow-hidden">
             {viewingImages.length > 0 && (
               <Carousel className="w-full">
                 <CarouselContent>
                   {viewingImages.map((image, index) => (
                     <CarouselItem key={index}>
-                      <div className="flex items-center justify-center p-1 md:p-2">
+                      <div className="flex items-center justify-center p-2">
                         <img
                           src={image}
                           alt={`Ảnh ${index + 1} của phòng ${viewingPhongName}`}
-                          className="max-h-[50vh] md:max-h-[60vh] w-auto object-contain rounded-lg"
+                          className="max-h-[60vh] w-auto object-contain rounded-lg"
                         />
                       </div>
                     </CarouselItem>
@@ -616,9 +662,9 @@ export default function PhongPage() {
               </Carousel>
             )}
           </div>
-          
-          <DialogFooter>
-            <div className="text-xs md:text-sm text-gray-600">
+
+          <DialogFooter className="border-t border-zinc-800">
+            <div className="text-sm text-zinc-400">
               {viewingImages.length} ảnh {viewingImages.length > 1 && '- Vuốt để xem thêm'}
             </div>
           </DialogFooter>
@@ -628,51 +674,53 @@ export default function PhongPage() {
       {/* Tenants Viewer Dialog */}
       <Dialog open={isTenantsViewerOpen} onOpenChange={setIsTenantsViewerOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto w-[95vw] md:w-full">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base md:text-lg">
-              <Users className="h-4 w-4 md:h-5 md:w-5" />
+          <DialogHeader className="border-b border-zinc-200 dark:border-zinc-800">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Users className="h-5 w-5" />
               Danh sách người thuê - Phòng {viewingTenantsPhongName}
             </DialogTitle>
-            <DialogDescription className="text-xs md:text-sm">
+            <DialogDescription className="text-sm">
               Tổng cộng {viewingTenants.length} người đang thuê phòng này
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-3 md:space-y-4 py-2 md:py-4">
+
+          <div className="space-y-4 py-4">
             {viewingTenants.map((tenant, index) => (
-              <Card key={tenant._id || index} className="overflow-hidden">
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-start gap-3 md:gap-4">
+              <div key={tenant._id || index} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div className="p-4">
+                  <div className="flex items-start gap-4">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-100 to-rose-100 dark:from-orange-900/30 dark:to-rose-900/30 flex items-center justify-center">
+                        <Users className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <h3 className="text-base md:text-lg font-semibold text-gray-900">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
                           {tenant.hoTen}
                         </h3>
-                        <Badge variant="outline" className="ml-2 text-xs">
+                        <Badge className="ml-2 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-900/50">
                           #{index + 1}
                         </Badge>
                       </div>
-                      
-                      <div className="grid grid-cols-1 gap-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="font-medium text-gray-600">SĐT:</span>
-                          <span className="text-gray-900">{tenant.soDienThoai}</span>
-                        </div>
+
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium text-zinc-600 dark:text-zinc-400">SĐT:</span>
+                        <span className="text-zinc-900 dark:text-white">{tenant.soDienThoai}</span>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTenantsViewerOpen(false)} className="text-sm">
+
+          <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800">
+            <Button
+              variant="outline"
+              onClick={() => setIsTenantsViewerOpen(false)}
+              className="border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            >
               Đóng
             </Button>
           </DialogFooter>
@@ -781,7 +829,17 @@ function PhongForm({
     { value: 'chen', label: 'Chén' },
     { value: 'bat', label: 'Bát' },
   ];
+const allSelected =
+  formData.tienNghi.length === tienNghiOptions.length;
 
+const handleToggleAllTienNghi = () => {
+  setFormData(prev => ({
+    ...prev,
+    tienNghi: allSelected
+      ? []
+      : tienNghiOptions.map(item => item.value)
+  }));
+};
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -824,42 +882,43 @@ function PhongForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <Tabs defaultValue="thong-tin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="thong-tin" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-            <Info className="h-3 w-3 md:h-4 md:w-4" />
+        <TabsList className="grid w-full grid-cols-2 bg-zinc-100 dark:bg-zinc-800">
+          <TabsTrigger value="thong-tin" className="flex items-center gap-2 text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900">
+            <Info className="h-4 w-4" />
             Thông tin
           </TabsTrigger>
-          <TabsTrigger value="anh-phong" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-            <Image className="h-3 w-3 md:h-4 md:w-4" />
+          <TabsTrigger value="anh-phong" className="flex items-center gap-2 text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900">
+            <Image className="h-4 w-4" />
             Ảnh phòng
           </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="thong-tin" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+
+        <TabsContent value="thong-tin" className="space-y-6 mt-6">
           {/* Thông tin cơ bản */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="maPhong" className="text-sm">Mã phòng</Label>
+              <Label htmlFor="maPhong" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Mã phòng</Label>
               <Input
                 id="maPhong"
                 value={formData.maPhong}
                 onChange={(e) => setFormData(prev => ({ ...prev, maPhong: e.target.value.toUpperCase() }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                placeholder="VD: A101"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="toaNha" className="text-sm">Tòa nhà</Label>
+              <Label htmlFor="toaNha" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tòa nhà</Label>
               <Select value={formData.toaNha} onValueChange={(value) => setFormData(prev => ({ ...prev, toaNha: value }))}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
                   <SelectValue placeholder="Chọn tòa nhà" />
                 </SelectTrigger>
                 <SelectContent>
                   {toaNhaList.map((toaNha) => (
-                    <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
+                    <SelectItem key={toaNha._id} value={toaNha._id!}>
                       {toaNha.tenToaNha}
                     </SelectItem>
                   ))}
@@ -868,25 +927,25 @@ function PhongForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="trangThai" className="text-sm">Trạng thái</Label>
+              <Label htmlFor="trangThai" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Trạng thái</Label>
               <Select value={formData.trangThai} onValueChange={(value) => setFormData(prev => ({ ...prev, trangThai: value as 'trong' | 'daDat' | 'dangThue' | 'baoTri' }))}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="trong" className="text-sm">Trống</SelectItem>
-                  <SelectItem value="daDat" className="text-sm">Đã đặt</SelectItem>
-                  <SelectItem value="dangThue" className="text-sm">Đang thuê</SelectItem>
-                  <SelectItem value="baoTri" className="text-sm">Bảo trì</SelectItem>
+                  <SelectItem value="trong">Trống</SelectItem>
+                  <SelectItem value="daDat">Đã đặt</SelectItem>
+                  <SelectItem value="dangThue">Đang thuê</SelectItem>
+                  <SelectItem value="baoTri">Bảo trì</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           {/* Thông tin phòng */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="tang" className="text-sm">Tầng</Label>
+              <Label htmlFor="tang" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tầng</Label>
               <Input
                 id="tang"
                 type="number"
@@ -894,12 +953,12 @@ function PhongForm({
                 value={formData.tang}
                 onChange={(e) => setFormData(prev => ({ ...prev, tang: parseInt(e.target.value) || 0 }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="dienTich" className="text-sm">Diện tích (m²)</Label>
+              <Label htmlFor="dienTich" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Diện tích (m²)</Label>
               <Input
                 id="dienTich"
                 type="number"
@@ -907,12 +966,12 @@ function PhongForm({
                 value={formData.dienTich}
                 onChange={(e) => setFormData(prev => ({ ...prev, dienTich: parseInt(e.target.value) || 0 }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="soNguoiToiDa" className="text-sm">Số người tối đa</Label>
+              <Label htmlFor="soNguoiToiDa" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Số người tối đa</Label>
               <Input
                 id="soNguoiToiDa"
                 type="number"
@@ -921,21 +980,21 @@ function PhongForm({
                 value={formData.soNguoiToiDa}
                 onChange={(e) => setFormData(prev => ({ ...prev, soNguoiToiDa: parseInt(e.target.value) || 1 }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
 
-            <div className="space-y-2 col-span-2 md:col-span-1">
-              <Label className="text-sm">Preview</Label>
-              <div className="h-10 bg-gray-50 border rounded-md flex items-center justify-center text-xs md:text-sm text-gray-500">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Preview</Label>
+              <div className="h-10 bg-gradient-to-r from-orange-50 to-rose-50 dark:from-orange-900/20 dark:to-rose-900/20 border border-orange-100 dark:border-orange-900/30 rounded-lg flex items-center justify-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Phòng {formData.maPhong || 'XXX'} - Tầng {formData.tang}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="giaThue" className="text-sm">Giá thuê (VNĐ)</Label>
+              <Label htmlFor="giaThue" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Giá thuê (VNĐ)</Label>
               <Input
                 id="giaThue"
                 type="number"
@@ -943,15 +1002,15 @@ function PhongForm({
                 value={formData.giaThue}
                 onChange={(e) => setFormData(prev => ({ ...prev, giaThue: parseInt(e.target.value) || 0 }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
               />
-              <span className="text-xs md:text-sm text-gray-500 font-medium">
+              <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
                 {formatCurrency(formData.giaThue)}
               </span>
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="tienCoc" className="text-sm">Tiền cọc (VNĐ)</Label>
+              <Label htmlFor="tienCoc" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tiền cọc (VNĐ)</Label>
               <Input
                 id="tienCoc"
                 type="number"
@@ -959,55 +1018,72 @@ function PhongForm({
                 value={formData.tienCoc}
                 onChange={(e) => setFormData(prev => ({ ...prev, tienCoc: parseInt(e.target.value) || 0 }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
               />
-              <span className="text-xs md:text-sm text-gray-500 font-medium">
+              <span className="text-sm text-orange-600 dark:text-orange-400 font-medium">
                 {formatCurrency(formData.tienCoc)}
               </span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="moTa" className="text-sm">Mô tả</Label>
+            <Label htmlFor="moTa" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Mô tả</Label>
             <Textarea
               id="moTa"
               value={formData.moTa}
               onChange={(e) => setFormData(prev => ({ ...prev, moTa: e.target.value }))}
               rows={3}
-              className="text-sm"
+              className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+              placeholder="Mô tả chi tiết về phòng..."
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm">Tiện nghi</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
-              {tienNghiOptions.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={option.value}
-                    checked={formData.tienNghi.includes(option.value)}
-                    onChange={(e) => handleTienNghiChange(option.value, e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  <Label htmlFor={option.value} className="text-sm">
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
+          <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                Tiện nghi ({formData.tienNghi.length}/{tienNghiOptions.length})
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleToggleAllTienNghi}
+                className="text-xs border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              >
+                {allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+              </Button>
+            </div>
+
+            <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {tienNghiOptions.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={option.value}
+                      checked={formData.tienNghi.includes(option.value)}
+                      onChange={(e) => handleTienNghiChange(option.value, e.target.checked)}
+                      className="rounded border-zinc-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                    />
+                    <Label htmlFor={option.value} className="text-sm cursor-pointer">
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </TabsContent>
-        
-        <TabsContent value="anh-phong" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
-          <div className="space-y-3 md:space-y-4">
+
+        <TabsContent value="anh-phong" className="space-y-6 mt-6">
+          <div className="space-y-3">
             <div>
-              <h3 className="text-base md:text-lg font-medium mb-1 md:mb-2">Quản lý ảnh phòng</h3>
-              <p className="text-xs md:text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">Quản lý ảnh phòng</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 Tải lên tối đa 10 ảnh để khách hàng có thể xem chi tiết phòng
               </p>
             </div>
-            
+
             <PhongImageUpload
               images={formData.anhPhong}
               onImagesChange={(images: string[]) => setFormData(prev => ({ ...prev, anhPhong: images }))}
@@ -1018,11 +1094,19 @@ function PhongForm({
         </TabsContent>
       </Tabs>
 
-      <DialogFooter className="gap-2">
-        <Button type="button" variant="outline" onClick={onClose} className="text-sm">
+      <DialogFooter className="gap-2 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          className="border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        >
           Hủy
         </Button>
-        <Button type="submit" className="text-sm">
+        <Button
+          type="submit"
+          className="bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+        >
           {phong ? 'Cập nhật' : 'Thêm mới'}
         </Button>
       </DialogFooter>

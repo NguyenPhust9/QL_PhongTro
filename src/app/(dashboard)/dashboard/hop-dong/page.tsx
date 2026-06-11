@@ -159,7 +159,7 @@ export default function HopDongPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'hoatDong':
-        return <Badge variant="default">Hoạt động</Badge>;
+  return <Badge className="bg-green-500 hover:bg-green-600 text-white">Hoạt động</Badge>;
       case 'hetHan':
         return <Badge variant="destructive">Hết hạn</Badge>;
       case 'daHuy':
@@ -888,34 +888,49 @@ export default function HopDongPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          <div>
+            <div className="h-8 bg-gray-300 rounded w-48 animate-pulse mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          </div>
         </div>
-        <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="h-24 bg-gray-200 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
+        <div className="h-96 bg-gray-200 rounded-lg animate-pulse"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Quản lý hợp đồng</h1>
-          <p className="text-xs md:text-sm text-gray-600">Danh sách tất cả hợp đồng trong hệ thống</p>
+          <h1 className="text-3xl font-bold text-gray-900">Quản lý hợp đồng</h1>
+          <p className="text-sm text-gray-500 mt-1">Quản lý và theo dõi tất cả hợp đồng thuê phòng trọ</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button 
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={cache.isRefreshing}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none transition-all hover:shadow-md"
           >
             <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
-          <Button size="sm" onClick={() => router.push('/dashboard/hop-dong/them-moi')} className="flex-1 sm:flex-none">
+          <Button 
+            size="sm" 
+            onClick={() => router.push('/dashboard/hop-dong/them-moi')} 
+            className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 transition-all hover:shadow-md"
+          >
             <Plus className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Thêm hợp đồng</span>
             <span className="sm:hidden">Thêm</span>
@@ -928,17 +943,17 @@ export default function HopDongPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/50" 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
             onClick={() => setViewingHopDong(null)}
           />
           
           {/* Modal Content */}
-          <div className="relative w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-6xl bg-white md:rounded-lg shadow-lg overflow-hidden flex flex-col">
+          <div className="relative w-full h-full md:w-[95vw] md:h-[95vh] md:max-w-6xl bg-white md:rounded-xl shadow-2xl overflow-hidden flex flex-col">
             {/* Fixed Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b bg-white flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white flex-shrink-0 border-0">
               <div>
-                <h2 className="text-lg md:text-2xl font-semibold">Chi tiết hợp đồng</h2>
-                <p className="text-xs md:text-sm text-gray-600">
+                <h2 className="text-lg md:text-2xl font-bold">Chi tiết hợp đồng</h2>
+                <p className="text-xs md:text-sm text-blue-100 mt-1">
                   Thông tin chi tiết hợp đồng {viewingHopDong.maHopDong}
                 </p>
               </div>
@@ -946,153 +961,199 @@ export default function HopDongPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setViewingHopDong(null)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 hover:bg-blue-500 text-white"
                 >
-                  <CloseIcon className="h-4 w-4" />
+                  <CloseIcon className="h-5 w-5" />
                 </Button>
             </div>
             
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
-              <div className="space-y-4 md:space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Mã hợp đồng</Label>
-                    <p className="text-base md:text-lg font-semibold">{viewingHopDong.maHopDong}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Trạng thái</Label>
-                    <div className="mt-1">{getStatusBadge(viewingHopDong.trangThai)}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Phòng</Label>
-                    <p className="text-base md:text-lg">{getPhongName(viewingHopDong.phong)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Tòa nhà</Label>
-                    <p className="text-base md:text-lg">{getPhongInfo(viewingHopDong.phong).toaNha}</p>
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50">
+              <div className="space-y-6">
+                {/* Section 1: Basic Info */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    Thông tin cơ bản
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Mã hợp đồng</Label>
+                      <p className="text-lg font-bold text-gray-900 mt-2">{viewingHopDong.maHopDong}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Trạng thái</Label>
+                      <div className="mt-2">{getStatusBadge(viewingHopDong.trangThai)}</div>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Khách thuê</Label>
-                  <div className="mt-2 space-y-1">
+                {/* Section 2: Property Info */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-purple-600" />
+                    Thông tin bất động sản
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Phòng</Label>
+                      <p className="text-base font-semibold text-gray-900 mt-2">{getPhongName(viewingHopDong.phong)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Tòa nhà</Label>
+                      <p className="text-base font-semibold text-gray-900 mt-2">{getPhongInfo(viewingHopDong.phong).toaNha}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Tenant Info */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-indigo-600" />
+                    Khách thuê
+                  </h3>
+                  <div className="space-y-2">
                     {viewingHopDong.khachThueId.map((khachThue, index) => {
                       const khachThueId = typeof khachThue === 'object' ? (khachThue as { _id: string })._id : khachThue;
                       const nguoiDaiDienId = typeof viewingHopDong.nguoiDaiDien === 'object' ? (viewingHopDong.nguoiDaiDien as { _id: string })._id : viewingHopDong.nguoiDaiDien;
                       return (
-                        <div key={khachThueId} className="flex items-center gap-2">
-                          <span className="text-sm">
+                        <div key={khachThueId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Users className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-700 font-medium">
                             {index + 1}. {getKhachThueName(khachThue)}
-                            {khachThueId === nguoiDaiDienId && (
-                              <Badge variant="outline" className="ml-2">Người đại diện</Badge>
-                            )}
                           </span>
+                          {khachThueId === nguoiDaiDienId && (
+                            <Badge className="ml-auto bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">Người đại diện</Badge>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày bắt đầu</Label>
-                    <p className="text-lg">{new Date(viewingHopDong.ngayBatDau).toLocaleDateString('vi-VN')}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày kết thúc</Label>
-                    <p className="text-lg">{new Date(viewingHopDong.ngayKetThuc).toLocaleDateString('vi-VN')}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Giá thuê</Label>
-                    <p className="text-lg font-semibold">{formatCurrency(viewingHopDong.giaThue)}/tháng</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Tiền cọc</Label>
-                    <p className="text-lg font-semibold">{formatCurrency(viewingHopDong.tienCoc)}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày thanh toán</Label>
-                    <p className="text-lg">Hàng {viewingHopDong.chuKyThanhToan} - ngày {viewingHopDong.ngayThanhToan}</p>
+                {/* Section 4: Contract Duration */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-orange-600" />
+                    Thời hạn hợp đồng
+                  </h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Ngày bắt đầu</Label>
+                      <p className="text-base font-semibold text-gray-900 mt-2">{new Date(viewingHopDong.ngayBatDau).toLocaleDateString('vi-VN')}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Ngày kết thúc</Label>
+                      <p className="text-base font-semibold text-gray-900 mt-2">{new Date(viewingHopDong.ngayKetThuc).toLocaleDateString('vi-VN')}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Giá điện</Label>
-                    <p className="text-lg">{formatCurrency(viewingHopDong.giaDien)}/kWh</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Giá nước</Label>
-                    <p className="text-lg">{formatCurrency(viewingHopDong.giaNuoc)}/m³</p>
+                {/* Section 5: Pricing */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">💰 Giá cả và phí</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <Label className="text-xs font-semibold text-blue-600 uppercase">Giá thuê</Label>
+                      <p className="text-2xl font-bold text-blue-900 mt-2">{formatCurrency(viewingHopDong.giaThue)}</p>
+                      <p className="text-xs text-blue-600 mt-1">/tháng</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <Label className="text-xs font-semibold text-green-600 uppercase">Tiền cọc</Label>
+                      <p className="text-2xl font-bold text-green-900 mt-2">{formatCurrency(viewingHopDong.tienCoc)}</p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                      <Label className="text-xs font-semibold text-purple-600 uppercase">Ngày thanh toán</Label>
+                      <p className="text-base font-bold text-purple-900 mt-2">Hàng {viewingHopDong.chuKyThanhToan}</p>
+                      <p className="text-xs text-purple-600 mt-1">Ngày {viewingHopDong.ngayThanhToan}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Chỉ số điện ban đầu</Label>
-                    <p className="text-lg">{viewingHopDong.chiSoDienBanDau} kWh</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Chỉ số nước ban đầu</Label>
-                    <p className="text-lg">{viewingHopDong.chiSoNuocBanDau} m³</p>
+                {/* Section 6: Utilities */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">⚡ Tiện ích</h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                      <Label className="text-xs font-semibold text-yellow-600 uppercase">Giá điện</Label>
+                      <p className="text-lg font-bold text-yellow-900 mt-2">{formatCurrency(viewingHopDong.giaDien)}</p>
+                      <p className="text-xs text-yellow-600 mt-1">/kWh - Chỉ số ban đầu: {viewingHopDong.chiSoDienBanDau}</p>
+                    </div>
+                    <div className="bg-cyan-50 p-4 rounded-lg border border-cyan-200">
+                      <Label className="text-xs font-semibold text-cyan-600 uppercase">Giá nước</Label>
+                      <p className="text-lg font-bold text-cyan-900 mt-2">{formatCurrency(viewingHopDong.giaNuoc)}</p>
+                      <p className="text-xs text-cyan-600 mt-1">/m³ - Chỉ số ban đầu: {viewingHopDong.chiSoNuocBanDau}</p>
+                    </div>
                   </div>
                 </div>
 
+                {/* Section 7: Additional Services */}
                 {viewingHopDong.phiDichVu.length > 0 && (
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Phí dịch vụ</Label>
-                    <div className="mt-2 space-y-2">
+                  <div className="bg-white p-6 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">🎯 Phí dịch vụ bổ sung</h3>
+                    <div className="space-y-3">
                       {viewingHopDong.phiDichVu.map((phi, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <span>{phi.ten}</span>
-                          <span className="font-semibold">{formatCurrency(phi.gia)}</span>
+                        <div key={index} className="flex justify-between items-center p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                          <span className="font-medium text-gray-700">{phi.ten}</span>
+                          <span className="font-bold text-gray-900">{formatCurrency(phi.gia)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Điều khoản</Label>
-                  <p className="text-sm mt-2 p-3 bg-gray-50 rounded whitespace-pre-wrap">
+                {/* Section 8: Terms */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">📋 Điều khoản</h3>
+                  <p className="text-sm text-gray-700 p-4 bg-gray-50 rounded-lg border border-gray-200 whitespace-pre-wrap font-mono">
                     {viewingHopDong.dieuKhoan}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày tạo</Label>
-                    <p className="text-sm">{new Date(viewingHopDong.ngayTao).toLocaleDateString('vi-VN')}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày cập nhật</Label>
-                    <p className="text-sm">{new Date(viewingHopDong.ngayCapNhat).toLocaleDateString('vi-VN')}</p>
+                {/* Section 9: Metadata */}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">📅 Thông tin khác</h3>
+                  <div className="grid grid-cols-2 gap-6 text-sm">
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Ngày tạo</Label>
+                      <p className="text-gray-700 mt-2">{new Date(viewingHopDong.ngayTao).toLocaleDateString('vi-VN')}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-gray-500 uppercase">Ngày cập nhật</Label>
+                      <p className="text-gray-700 mt-2">{new Date(viewingHopDong.ngayCapNhat).toLocaleDateString('vi-VN')}</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Fixed Footer */}
-            <div className="flex flex-col sm:flex-row gap-2 p-4 md:p-6 border-t bg-white flex-shrink-0">
-              <Button variant="outline" size="sm" onClick={() => setViewingHopDong(null)} className="flex-1 sm:flex-none">
+            <div className="flex flex-col sm:flex-row gap-3 p-4 md:p-6 bg-white border-t flex-shrink-0">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setViewingHopDong(null)} 
+                className="flex-1 sm:flex-none hover:bg-gray-50"
+              >
                 Đóng
               </Button>
-              <Button size="sm" onClick={() => handleDownload(viewingHopDong)} className="flex-1 sm:flex-none">
-                <Download className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+              <Button 
+                size="sm" 
+                onClick={() => handleDownload(viewingHopDong)} 
+                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Download className="h-4 w-4 mr-2" />
                 Tải xuống
               </Button>
-              <Button size="sm" onClick={() => {
-                setViewingHopDong(null);
-                handleEdit(viewingHopDong);
-              }} className="flex-1 sm:flex-none">
-                <Edit className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  setViewingHopDong(null);
+                  handleEdit(viewingHopDong);
+                }} 
+                className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Edit className="h-4 w-4 mr-2" />
                 Chỉnh sửa
               </Button>
             </div>
@@ -1101,59 +1162,67 @@ export default function HopDongPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 md:gap-4 lg:gap-6">
-        <Card className="p-2 md:p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng hợp đồng</p>
-              <p className="text-base md:text-2xl font-bold">{hopDongList.length}</p>
+              <p className="text-xs font-medium text-blue-600">Tổng hợp đồng</p>
+              <p className="text-3xl font-bold text-blue-900 mt-2">{hopDongList.length}</p>
             </div>
-            <FileText className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />
+            <div className="bg-blue-200 p-3 rounded-lg">
+              <FileText className="h-6 w-6 text-blue-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Hoạt động</p>
-              <p className="text-base md:text-2xl font-bold text-green-600">
+              <p className="text-xs font-medium text-green-600">Hoạt động</p>
+              <p className="text-3xl font-bold text-green-900 mt-2">
                 {hopDongList.filter(h => h.trangThai === 'hoatDong').length}
               </p>
             </div>
-            <FileText className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
+            <div className="bg-green-200 p-3 rounded-lg">
+              <FileText className="h-6 w-6 text-green-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Sắp hết hạn</p>
-              <p className="text-base md:text-2xl font-bold text-orange-600">
+              <p className="text-xs font-medium text-orange-600">Sắp hết hạn</p>
+              <p className="text-3xl font-bold text-orange-900 mt-2">
                 {hopDongList.filter(h => isExpiringSoon(h.ngayKetThuc)).length}
               </p>
             </div>
-            <Calendar className="h-3 w-3 md:h-4 md:w-4 text-orange-600" />
+            <div className="bg-orange-200 p-3 rounded-lg">
+              <Calendar className="h-6 w-6 text-orange-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-red-50 to-red-100 border-red-200 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Đã hết hạn</p>
-              <p className="text-base md:text-2xl font-bold text-red-600">
+              <p className="text-xs font-medium text-red-600">Đã hết hạn</p>
+              <p className="text-3xl font-bold text-red-900 mt-2">
                 {hopDongList.filter(h => isExpired(h.ngayKetThuc)).length}
               </p>
             </div>
-            <Calendar className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
+            <div className="bg-red-200 p-3 rounded-lg">
+              <Calendar className="h-6 w-6 text-red-600" />
+            </div>
           </div>
         </Card>
       </div>
 
       {/* Desktop Table */}
-      <Card className="hidden md:block">
-        <CardHeader>
-          <CardTitle>Danh sách hợp đồng</CardTitle>
-          <CardDescription>
+      <Card className="hidden md:block border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b pb-6">
+          <CardTitle className="text-xl text-gray-900">Danh sách hợp đồng</CardTitle>
+          <CardDescription className="text-gray-600 mt-2">
             {filteredHopDong.length} hợp đồng được tìm thấy
           </CardDescription>
         </CardHeader>
@@ -1183,25 +1252,25 @@ export default function HopDongPage() {
 
       {/* Mobile Cards */}
       <div className="md:hidden">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Danh sách hợp đồng</h2>
-          <span className="text-sm text-gray-500">{filteredHopDong.length} hợp đồng</span>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Danh sách hợp đồng</h2>
+          <p className="text-sm text-gray-500 mt-1">{filteredHopDong.length} hợp đồng tìm thấy</p>
         </div>
         
         {/* Mobile Filters */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-3 mb-6 bg-white p-4 rounded-lg border border-gray-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Tìm kiếm hợp đồng..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-sm"
+              className="pl-10 text-sm bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent>
@@ -1212,7 +1281,7 @@ export default function HopDongPage() {
               </SelectContent>
             </Select>
             <Select value={toaNhaFilter} onValueChange={setToaNhaFilter}>
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Tòa nhà" />
               </SelectTrigger>
               <SelectContent>
@@ -1228,7 +1297,7 @@ export default function HopDongPage() {
         </div>
 
         {/* Mobile Card List */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filteredHopDong.map((hopDong) => {
             const phongInfo = getPhongInfo(hopDong.phong);
             const nguoiDaiDien = getKhachThueName(hopDong.nguoiDaiDien);
@@ -1236,32 +1305,32 @@ export default function HopDongPage() {
             const isExpiredNow = isExpired(hopDong.ngayKetThuc);
 
             return (
-              <Card key={hopDong._id} className="p-4">
-                <div className="space-y-3">
+              <Card key={hopDong._id} className="p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="space-y-4">
                   {/* Header with contract code and status */}
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{hopDong.maHopDong}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Home className="h-3 w-3 text-gray-400" />
-                        <span className="text-sm text-gray-600">{phongInfo.maPhong}</span>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 text-base">{hopDong.maHopDong}</h3>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Home className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm text-gray-700 font-medium">{phongInfo.maPhong}</span>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 items-end">
+                    <div className="flex flex-col gap-2 items-end">
                       {(() => {
                         switch (hopDong.trangThai) {
-                          case 'hoatDong':
-                            return <Badge variant="default" className="text-xs">Hoạt động</Badge>;
+                        case 'hoatDong':
+  return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs font-medium border-0">Hoạt động</Badge>;
                           case 'hetHan':
-                            return <Badge variant="destructive" className="text-xs">Hết hạn</Badge>;
+                            return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 text-xs font-medium border-0">Hết hạn</Badge>;
                           case 'daHuy':
-                            return <Badge variant="secondary" className="text-xs">Đã hủy</Badge>;
+                            return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 text-xs font-medium border-0">Đã hủy</Badge>;
                           default:
-                            return <Badge variant="outline" className="text-xs">{hopDong.trangThai}</Badge>;
+                            return <Badge className="bg-gray-100 text-gray-700 text-xs font-medium border-0">{hopDong.trangThai}</Badge>;
                         }
                       })()}
                       {isExpiring && hopDong.trangThai === 'hoatDong' && (
-                        <Badge variant="outline" className="text-xs text-orange-600 border-orange-600">
+                        <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100 text-xs font-medium border-0">
                           Sắp hết hạn
                         </Badge>
                       )}
@@ -1269,16 +1338,16 @@ export default function HopDongPage() {
                   </div>
 
                   {/* Building and tenant info */}
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-3 w-3 text-gray-400" />
-                      <span className="text-gray-600">{phongInfo.toaNha}</span>
+                  <div className="space-y-2 border-t pt-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Building2 className="h-4 w-4 text-purple-500" />
+                      <span className="text-gray-700">{phongInfo.toaNha}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-3 w-3 text-gray-400" />
-                      <span className="text-gray-600">{nguoiDaiDien}</span>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="h-4 w-4 text-indigo-500" />
+                      <span className="text-gray-700">{nguoiDaiDien}</span>
                       {hopDong.khachThueId.length > 1 && (
-                        <Badge variant="secondary" className="text-[10px]">
+                        <Badge variant="secondary" className="text-[11px] ml-1">
                           +{hopDong.khachThueId.length - 1}
                         </Badge>
                       )}
@@ -1286,38 +1355,36 @@ export default function HopDongPage() {
                   </div>
 
                   {/* Contract dates */}
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 border-t pt-2">
-                    <div>
-                      <Calendar className="h-3 w-3 inline mr-1" />
-                      Từ: {new Date(hopDong.ngayBatDau).toLocaleDateString('vi-VN')}
+                  <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 border-t pt-3">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                      <span>Từ: {new Date(hopDong.ngayBatDau).toLocaleDateString('vi-VN')}</span>
                     </div>
-                    <div>
-                      <Calendar className="h-3 w-3 inline mr-1" />
-                      Đến: {new Date(hopDong.ngayKetThuc).toLocaleDateString('vi-VN')}
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                      <span>Đến: {new Date(hopDong.ngayKetThuc).toLocaleDateString('vi-VN')}</span>
                     </div>
                   </div>
 
                   {/* Pricing info */}
-                  <div className="border-t pt-2">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-gray-500">Giá thuê:</span>
-                        <p className="font-semibold text-green-600">{formatCurrency(hopDong.giaThue)}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Tiền cọc:</span>
-                        <p className="font-semibold text-blue-600">{formatCurrency(hopDong.tienCoc)}</p>
-                      </div>
+                  <div className="border-t pt-3 grid grid-cols-2 gap-3">
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <span className="text-xs text-gray-600">Giá thuê</span>
+                      <p className="font-bold text-blue-700 text-sm mt-1">{formatCurrency(hopDong.giaThue)}</p>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <span className="text-xs text-gray-600">Tiền cọc</span>
+                      <p className="font-bold text-green-700 text-sm mt-1">{formatCurrency(hopDong.tienCoc)}</p>
                     </div>
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <div className="flex flex-wrap gap-2 pt-3 border-t">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleView(hopDong)}
-                      className="flex-1"
+                      className="flex-1 hover:bg-blue-50 hover:border-blue-300"
                     >
                       <FileText className="h-3.5 w-3.5 mr-1" />
                       Xem
@@ -1326,7 +1393,7 @@ export default function HopDongPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(hopDong)}
-                      className="flex-1"
+                      className="flex-1 hover:bg-amber-50 hover:border-amber-300"
                     >
                       <Edit className="h-3.5 w-3.5 mr-1" />
                       Sửa
@@ -1335,7 +1402,7 @@ export default function HopDongPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownload(hopDong)}
-                      className="flex-1"
+                      className="flex-1 hover:bg-green-50 hover:border-green-300"
                     >
                       <Download className="h-3.5 w-3.5 mr-1" />
                       Tải
@@ -1348,9 +1415,12 @@ export default function HopDongPage() {
         </div>
 
         {filteredHopDong.length === 0 && (
-          <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không có hợp đồng nào</p>
+          <div className="text-center py-12">
+            <div className="bg-gray-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <FileText className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-medium">Không có hợp đồng nào</p>
+            <p className="text-gray-400 text-sm mt-1">Thử thay đổi bộ lọc hoặc tạo hợp đồng mới</p>
           </div>
         )}
       </div>

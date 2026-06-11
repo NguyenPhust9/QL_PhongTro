@@ -164,53 +164,58 @@ export default function KhachThuePage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+        <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-64 animate-pulse"></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-zinc-200 dark:bg-zinc-800 rounded-xl h-24 animate-pulse"></div>
+          ))}
         </div>
-        <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        <div className="bg-zinc-200 dark:bg-zinc-800 rounded-xl h-96 animate-pulse"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Quản lý khách thuê</h1>
-          <p className="text-xs md:text-sm text-gray-600">Danh sách tất cả khách thuê trong hệ thống</p>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Quản lý khách thuê</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Danh sách tất cả khách thuê trong hệ thống</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={cache.isRefreshing}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
           >
-            <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
+            <RefreshCw className={`h-4 w-4 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline ml-2 text-sm">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => setEditingKhachThue(null)} className="flex-1 sm:flex-none">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Thêm khách thuê</span>
-                <span className="sm:hidden">Thêm</span>
+              <Button
+                size="sm"
+                onClick={() => setEditingKhachThue(null)}
+                className="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                <span>Thêm khách thuê</span>
               </Button>
             </DialogTrigger>
           <DialogContent className="w-[95vw] md:w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-lg">
                 {editingKhachThue ? 'Chỉnh sửa khách thuê' : 'Thêm khách thuê mới'}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm">
                 {editingKhachThue ? 'Cập nhật thông tin khách thuê' : 'Nhập thông tin khách thuê mới'}
               </DialogDescription>
             </DialogHeader>
-            
-            <KhachThueForm 
+
+            <KhachThueForm
               khachThue={editingKhachThue}
               onClose={() => setIsDialogOpen(false)}
               onSuccess={(newKhachThue) => {
@@ -218,16 +223,13 @@ export default function KhachThuePage() {
                 setIsDialogOpen(false);
                 if (newKhachThue) {
                   if (editingKhachThue) {
-                    // Cập nhật khách thuê hiện có
-                    setKhachThueList(prev => prev.map(kt => 
+                    setKhachThueList(prev => prev.map(kt =>
                       kt._id === editingKhachThue._id ? newKhachThue : kt
                     ));
                   } else {
-                    // Thêm khách thuê mới
                     setKhachThueList(prev => [newKhachThue, ...prev]);
                   }
                 } else {
-                  // Fallback: refresh data nếu không có dữ liệu trả về
                   fetchKhachThue();
                 }
                 toast.success(editingKhachThue ? 'Cập nhật khách thuê thành công!' : 'Thêm khách thuê thành công!');
@@ -241,63 +243,97 @@ export default function KhachThuePage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 md:gap-4 lg:gap-6">
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng khách thuê</p>
-              <p className="text-base md:text-2xl font-bold">{khachThueList.length}</p>
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Tổng khách thuê</p>
+              <p className="text-2xl lg:text-3xl font-bold text-zinc-900 dark:text-white mt-2">{khachThueList.length}</p>
             </div>
-            <Users className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />
+            <div className="p-2.5 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+              <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Đang thuê</p>
-              <p className="text-base md:text-2xl font-bold text-blue-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Đang thuê</p>
+              <p className="text-2xl lg:text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">
                 {khachThueList.filter(k => k.trangThai === 'dangThue').length}
               </p>
             </div>
-            <Users className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
+            <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-slate-200 dark:hover:border-slate-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Đã trả phòng</p>
-              <p className="text-base md:text-2xl font-bold text-gray-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Đã trả phòng</p>
+              <p className="text-2xl lg:text-3xl font-bold text-slate-600 dark:text-slate-400 mt-2">
                 {khachThueList.filter(k => k.trangThai === 'daTraPhong').length}
               </p>
             </div>
-            <Users className="h-3 w-3 md:h-4 md:w-4 text-gray-600" />
+            <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-900/20">
+              <Users className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-amber-200 dark:hover:border-amber-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Chưa thuê</p>
-              <p className="text-base md:text-2xl font-bold text-orange-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Chưa thuê</p>
+              <p className="text-2xl lg:text-3xl font-bold text-amber-600 dark:text-amber-400 mt-2">
                 {khachThueList.filter(k => k.trangThai === 'chuaThue').length}
               </p>
             </div>
-            <Users className="h-3 w-3 md:h-4 md:w-4 text-orange-600" />
+            <div className="p-2.5 rounded-lg bg-amber-100 dark:bg-amber-900/20">
+              <Users className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Desktop Table */}
-      <Card className="hidden md:block">
-        <CardHeader>
-          <CardTitle>Danh sách khách thuê</CardTitle>
-          <CardDescription>
-            {filteredKhachThue.length} khách thuê được tìm thấy
-          </CardDescription>
+      <Card className="hidden md:block border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <CardHeader className="border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg">Danh sách khách thuê</CardTitle>
+              <CardDescription>
+                {filteredKhachThue.length} khách thuê được tìm thấy
+              </CardDescription>
+            </div>
+            <div className="flex gap-3 flex-1 max-w-xl">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                <Input
+                  placeholder="Tìm kiếm khách thuê..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <Select value={selectedTrangThai} onValueChange={setSelectedTrangThai}>
+                <SelectTrigger className="w-40 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
+                  <SelectValue placeholder="Trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="dangThue">Đang thuê</SelectItem>
+                  <SelectItem value="daTraPhong">Đã trả phòng</SelectItem>
+                  <SelectItem value="chuaThue">Chưa thuê</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-0">
           <KhachThueDataTable
             data={filteredKhachThue}
             onEdit={handleEdit}
@@ -312,117 +348,123 @@ export default function KhachThuePage() {
       </Card>
 
       {/* Mobile Cards */}
-      <div className="md:hidden">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Danh sách khách thuê</h2>
-          <span className="text-sm text-gray-500">{filteredKhachThue.length} khách thuê</span>
-        </div>
-        
-        {/* Mobile Filters */}
-        <div className="space-y-2 mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm khách thuê..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-sm"
-            />
+      <div className="md:hidden space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-3">Danh sách khách thuê</h2>
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <Input
+                placeholder="Tìm kiếm khách thuê..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+              />
+            </div>
+            <Select value={selectedTrangThai} onValueChange={setSelectedTrangThai}>
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="dangThue">Đang thuê</SelectItem>
+                <SelectItem value="daTraPhong">Đã trả phòng</SelectItem>
+                <SelectItem value="chuaThue">Chưa thuê</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={selectedTrangThai} onValueChange={setSelectedTrangThai}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-sm">Tất cả</SelectItem>
-              <SelectItem value="dangThue" className="text-sm">Đang thuê</SelectItem>
-              <SelectItem value="daTraPhong" className="text-sm">Đã trả phòng</SelectItem>
-              <SelectItem value="chuaThue" className="text-sm">Chưa thuê</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Mobile Card List */}
-        <div className="space-y-3">
-          {filteredKhachThue.map((khachThue) => (
-            <Card key={khachThue._id} className="p-4">
-              <div className="space-y-3">
-                {/* Header with name and status */}
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{khachThue.hoTen}</h3>
-                    <p className="text-sm text-gray-500 capitalize">{khachThue.gioiTinh}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {(() => {
-                      switch (khachThue.trangThai) {
-                        case 'dangThue':
-                          return <Badge variant="default" className="text-xs">Đang thuê</Badge>;
-                        case 'daTraPhong':
-                          return <Badge variant="secondary" className="text-xs">Đã trả phòng</Badge>;
-                        case 'chuaThue':
-                          return <Badge variant="outline" className="text-xs">Chưa thuê</Badge>;
-                        default:
-                          return <Badge variant="outline" className="text-xs">{khachThue.trangThai}</Badge>;
-                      }
-                    })()}
-                  </div>
-                </div>
+        <div className="space-y-4">
+          {filteredKhachThue.map((khachThue) => {
+            const getTrangThaiColor = (trangThai: string) => {
+              switch (trangThai) {
+                case 'dangThue': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+                case 'daTraPhong': return 'bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300';
+                case 'chuaThue': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
+                default: return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300';
+              }
+            };
 
-                {/* Contact info */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-3 w-3 text-gray-400" />
-                    <span>{khachThue.soDienThoai}</span>
-                  </div>
-                  {khachThue.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Mail className="h-3 w-3" />
-                      <span className="truncate">{khachThue.email}</span>
+            const getTrangThaiText = (trangThai: string) => {
+              switch (trangThai) {
+                case 'dangThue': return 'Đang thuê';
+                case 'daTraPhong': return 'Đã trả phòng';
+                case 'chuaThue': return 'Chưa thuê';
+                default: return trangThai;
+              }
+            };
+
+            return (
+              <div key={khachThue._id} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900/30">
+                <div className="p-4">
+                  {/* Header with name and status */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg text-zinc-900 dark:text-white">{khachThue.hoTen}</h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 capitalize mt-0.5">{khachThue.gioiTinh}</p>
                     </div>
-                  )}
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <CreditCard className="h-3 w-3" />
-                    <span className="font-mono">{khachThue.cccd}</span>
+                    <Badge className={`${getTrangThaiColor(khachThue.trangThai)} text-xs font-medium`}>
+                      {getTrangThaiText(khachThue.trangThai)}
+                    </Badge>
                   </div>
-                </div>
 
-                {/* Additional info */}
-                <div className="space-y-1 text-xs text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-3 w-3" />
-                    <span>Ngày sinh: {new Date(khachThue.ngaySinh).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3" />
-                    <span className="truncate">{khachThue.queQuan}</span>
-                  </div>
-                  {khachThue.ngheNghiep && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-3 w-3" />
-                      <span>{khachThue.ngheNghiep}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Room info if available */}
-                {(khachThue as any).hopDongHienTai?.phong && (
-                  <div className="border-t pt-2">
+                  {/* Contact info */}
+                  <div className="space-y-2 mb-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
                     <div className="flex items-center gap-2 text-sm">
-                      <Users className="h-3 w-3 text-green-600" />
-                      <span className="font-medium">Phòng: {(khachThue as any).hopDongHienTai.phong.maPhong}</span>
+                      <Phone className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                      <span className="text-zinc-900 dark:text-white font-medium">{khachThue.soDienThoai}</span>
                     </div>
-                    {(khachThue as any).hopDongHienTai.phong.toaNha && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500 ml-5">
-                        <span>{(khachThue as any).hopDongHienTai.phong.toaNha.tenToaNha}</span>
+                    {khachThue.email && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                        <span className="truncate text-zinc-900 dark:text-white">{khachThue.email}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <CreditCard className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                      <span className="font-mono text-zinc-900 dark:text-white">{khachThue.cccd}</span>
+                    </div>
+                  </div>
+
+                  {/* Additional info */}
+                  <div className="space-y-1 mb-3 text-xs text-zinc-600 dark:text-zinc-400">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>Ngày sinh: {new Date(khachThue.ngaySinh).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span className="truncate">{khachThue.queQuan}</span>
+                    </div>
+                    {khachThue.ngheNghiep && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>{khachThue.ngheNghiep}</span>
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* Action buttons */}
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <div className="flex gap-2">
+                  {/* Room info if available */}
+                  {(khachThue as any).hopDongHienTai?.phong && (
+                    <div className="mb-3 p-3 border-t border-zinc-200 dark:border-zinc-700 pt-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+                          <Users className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <span className="font-medium text-zinc-900 dark:text-white">Phòng: {(khachThue as any).hopDongHienTai.phong.maPhong}</span>
+                      </div>
+                      {(khachThue as any).hopDongHienTai.phong.toaNha && (
+                        <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400 ml-6 mt-1">
+                          <span>{(khachThue as any).hopDongHienTai.phong.toaNha.tenToaNha}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
                     <Button
                       variant="outline"
                       size="sm"
@@ -431,39 +473,42 @@ export default function KhachThuePage() {
                         navigator.clipboard.writeText(publicUrl);
                         toast.success('Đã sao chép link đăng nhập khách thuê');
                       }}
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                      title="Copy link đăng nhập khách thuê"
+                      className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-emerald-200 dark:border-emerald-900/30 flex-1"
                     >
-                      <Copy className="h-3.5 w-3.5" />
+                      <Copy className="h-3.5 w-3.5 mr-1.5" />
+                      Copy link
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(khachThue)}
                       disabled={actionLoading === `edit-${khachThue._id}`}
+                      className="border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                     >
                       <Edit className="h-3.5 w-3.5" />
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(khachThue._id!)}
+                      disabled={actionLoading === `delete-${khachThue._id}`}
+                      className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(khachThue._id!)}
-                    disabled={actionLoading === `delete-${khachThue._id}`}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
               </div>
-            </Card>
-          ))}
+            );
+          })}
         </div>
 
         {filteredKhachThue.length === 0 && (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không có khách thuê nào</p>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-8 text-center">
+            <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 w-fit mx-auto mb-3">
+              <Users className="h-6 w-6 text-zinc-400" />
+            </div>
+            <p className="text-zinc-600 dark:text-zinc-400 font-medium">Không có khách thuê nào</p>
           </div>
         )}
       </div>
@@ -546,139 +591,143 @@ function KhachThueForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <Tabs defaultValue="thong-tin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="thong-tin" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-            <Info className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Thông tin</span>
-            <span className="sm:hidden">Thông tin</span>
+        <TabsList className="grid w-full grid-cols-2 bg-zinc-100 dark:bg-zinc-800">
+          <TabsTrigger value="thong-tin" className="flex items-center gap-2 text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900">
+            <Info className="h-4 w-4" />
+            Thông tin
           </TabsTrigger>
-          <TabsTrigger value="anh-cccd" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-            <CreditCard className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Ảnh CCCD</span>
-            <span className="sm:hidden">CCCD</span>
+          <TabsTrigger value="anh-cccd" className="flex items-center gap-2 text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900">
+            <CreditCard className="h-4 w-4" />
+            Ảnh CCCD
           </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="thong-tin" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+
+        <TabsContent value="thong-tin" className="space-y-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="hoTen" className="text-xs md:text-sm">Họ tên</Label>
+              <Label htmlFor="hoTen" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Họ tên</Label>
               <Input
                 id="hoTen"
                 value={formData.hoTen}
                 onChange={(e) => setFormData(prev => ({ ...prev, hoTen: e.target.value }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                placeholder="Nhập họ tên"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="soDienThoai" className="text-xs md:text-sm">Số điện thoại</Label>
+              <Label htmlFor="soDienThoai" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Số điện thoại</Label>
               <Input
                 id="soDienThoai"
                 value={formData.soDienThoai}
                 onChange={(e) => setFormData(prev => ({ ...prev, soDienThoai: e.target.value }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                placeholder="Nhập số điện thoại"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs md:text-sm">Email</Label>
+              <Label htmlFor="email" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                placeholder="Nhập email"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="cccd" className="text-xs md:text-sm">CCCD</Label>
+              <Label htmlFor="cccd" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">CCCD</Label>
               <Input
                 id="cccd"
                 value={formData.cccd}
                 onChange={(e) => setFormData(prev => ({ ...prev, cccd: e.target.value }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                placeholder="Nhập CCCD"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="ngaySinh" className="text-xs md:text-sm">Ngày sinh</Label>
+              <Label htmlFor="ngaySinh" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Ngày sinh</Label>
               <Input
                 id="ngaySinh"
                 type="date"
                 value={formData.ngaySinh}
                 onChange={(e) => setFormData(prev => ({ ...prev, ngaySinh: e.target.value }))}
                 required
-                className="text-sm"
+                className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="gioiTinh" className="text-xs md:text-sm">Giới tính</Label>
+              <Label htmlFor="gioiTinh" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Giới tính</Label>
               <Select value={formData.gioiTinh} onValueChange={(value) => setFormData(prev => ({ ...prev, gioiTinh: value as 'nam' | 'nu' }))}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="nam" className="text-sm">Nam</SelectItem>
-                  <SelectItem value="nu" className="text-sm">Nữ</SelectItem>
-                  <SelectItem value="khac" className="text-sm">Khác</SelectItem>
+                  <SelectItem value="nam">Nam</SelectItem>
+                  <SelectItem value="nu">Nữ</SelectItem>
+                  <SelectItem value="khac">Khác</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="queQuan" className="text-xs md:text-sm">Quê quán</Label>
+            <Label htmlFor="queQuan" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Quê quán</Label>
             <Input
               id="queQuan"
               value={formData.queQuan}
               onChange={(e) => setFormData(prev => ({ ...prev, queQuan: e.target.value }))}
               required
-              className="text-sm"
+              className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+              placeholder="Nhập quê quán"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ngheNghiep" className="text-xs md:text-sm">Nghề nghiệp</Label>
+            <Label htmlFor="ngheNghiep" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Nghề nghiệp</Label>
             <Input
               id="ngheNghiep"
               value={formData.ngheNghiep}
               onChange={(e) => setFormData(prev => ({ ...prev, ngheNghiep: e.target.value }))}
-              className="text-sm"
+              className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+              placeholder="Nhập nghề nghiệp"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="matKhau" className="text-xs md:text-sm">Mật khẩu đăng nhập</Label>
+          <div className="space-y-2 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+            <Label htmlFor="matKhau" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Mật khẩu đăng nhập</Label>
             <Input
               id="matKhau"
               type="password"
               value={formData.matKhau}
               onChange={(e) => setFormData(prev => ({ ...prev, matKhau: e.target.value }))}
               placeholder={khachThue && khachThue.matKhau ? "Để trống nếu không muốn thay đổi" : "Nhập mật khẩu (tối thiểu 6 ký tự)"}
-              className="text-sm"
+              className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
             />
-            <p className="text-[10px] md:text-xs text-muted-foreground">
-              {khachThue && khachThue.matKhau 
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              {khachThue && khachThue.matKhau
                 ? "Khách thuê đã có tài khoản đăng nhập. Để trống nếu không muốn thay đổi mật khẩu."
                 : "Tạo mật khẩu để khách thuê có thể đăng nhập vào hệ thống."
               }
             </p>
           </div>
         </TabsContent>
-        
-        <TabsContent value="anh-cccd" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+
+        <TabsContent value="anh-cccd" className="space-y-6 mt-6">
           <CCCDUpload
             anhCCCD={formData.anhCCCD}
             onCCCDChange={(anhCCCD) => setFormData(prev => ({ ...prev, anhCCCD }))}
@@ -687,22 +736,28 @@ function KhachThueForm({
         </TabsContent>
       </Tabs>
 
-      <DialogFooter className="flex-col sm:flex-row gap-2">
-        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="w-full sm:w-auto">
+      <DialogFooter className="gap-2 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isSubmitting}
+          className="border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        >
           Hủy
         </Button>
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+        >
           {isSubmitting ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              <span className="hidden sm:inline">{khachThue ? 'Đang cập nhật...' : 'Đang thêm...'}</span>
-              <span className="sm:hidden">{khachThue ? 'Đang cập nhật...' : 'Đang thêm...'}</span>
+              <span>{khachThue ? 'Đang cập nhật...' : 'Đang thêm...'}</span>
             </>
           ) : (
-            <>
-              <span className="hidden sm:inline">{khachThue ? 'Cập nhật' : 'Thêm mới'}</span>
-              <span className="sm:hidden">{khachThue ? 'Cập nhật' : 'Thêm mới'}</span>
-            </>
+            <span>{khachThue ? 'Cập nhật' : 'Thêm mới'}</span>
           )}
         </Button>
       </DialogFooter>

@@ -144,53 +144,58 @@ export default function ToaNhaPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+        <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-64 animate-pulse"></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-zinc-200 dark:bg-zinc-800 rounded-xl h-24 animate-pulse"></div>
+          ))}
         </div>
-        <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        <div className="bg-zinc-200 dark:bg-zinc-800 rounded-xl h-96 animate-pulse"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Quản lý tòa nhà</h1>
-          <p className="text-xs md:text-sm text-gray-600">Danh sách tất cả tòa nhà trong hệ thống</p>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Quản lý tòa nhà</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Danh sách tất cả tòa nhà trong hệ thống</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={cache.isRefreshing}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
           >
-            <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline ml-2">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
+            <RefreshCw className={`h-4 w-4 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline ml-2 text-sm">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => setEditingToaNha(null)} className="flex-1 sm:flex-none">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Thêm tòa nhà</span>
-                <span className="sm:hidden">Thêm</span>
+              <Button
+                size="sm"
+                onClick={() => setEditingToaNha(null)}
+                className="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                <span>Thêm tòa nhà</span>
               </Button>
             </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] md:w-full">
             <DialogHeader>
-              <DialogTitle className="text-base md:text-lg">
+              <DialogTitle className="text-lg">
                 {editingToaNha ? 'Chỉnh sửa tòa nhà' : 'Thêm tòa nhà mới'}
               </DialogTitle>
-              <DialogDescription className="text-xs md:text-sm">
+              <DialogDescription className="text-sm">
                 {editingToaNha ? 'Cập nhật thông tin tòa nhà' : 'Nhập thông tin tòa nhà mới'}
               </DialogDescription>
             </DialogHeader>
-            
-            <ToaNhaForm 
+
+            <ToaNhaForm
               toaNha={editingToaNha}
               onClose={() => setIsDialogOpen(false)}
               onSuccess={() => {
@@ -206,61 +211,84 @@ export default function ToaNhaPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 md:gap-4 lg:gap-6">
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng tòa nhà</p>
-              <p className="text-base md:text-2xl font-bold">{toaNhaList.length}</p>
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Tổng tòa nhà</p>
+              <p className="text-2xl lg:text-3xl font-bold text-zinc-900 dark:text-white mt-2">{toaNhaList.length}</p>
             </div>
-            <Building2 className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />
+            <div className="p-2.5 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+              <Building2 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Phòng trống</p>
-              <p className="text-base md:text-2xl font-bold text-green-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Phòng trống</p>
+              <p className="text-2xl lg:text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
                 {toaNhaList.reduce((sum, toaNha) => sum + ((toaNha as any).phongTrong || 0), 0)}
               </p>
             </div>
-            <Users className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
+            <div className="p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/20">
+              <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900/30">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Đang thuê</p>
-              <p className="text-base md:text-2xl font-bold text-blue-600">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Đang thuê</p>
+              <p className="text-2xl lg:text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">
                 {toaNhaList.reduce((sum, toaNha) => sum + ((toaNha as any).phongDangThue || 0), 0)}
               </p>
             </div>
-            <Users className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
-          </div>
-        </Card>
-
-        <Card className="p-2 md:p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tìm thấy</p>
-              <p className="text-base md:text-2xl font-bold">{filteredToaNha.length}</p>
+            <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <Search className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />
           </div>
-        </Card>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md hover:border-purple-200 dark:hover:border-purple-900/30">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Tìm thấy</p>
+              <p className="text-2xl lg:text-3xl font-bold text-zinc-900 dark:text-white mt-2">{filteredToaNha.length}</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+              <Search className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Desktop Table View */}
-      <Card className="hidden md:block">
-        <CardHeader>
-          <CardTitle>Danh sách tòa nhà</CardTitle>
-          <CardDescription>
-            {filteredToaNha.length} tòa nhà được tìm thấy
-          </CardDescription>
+      <Card className="hidden md:block border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <CardHeader className="border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg">Danh sách tòa nhà</CardTitle>
+              <CardDescription>
+                {filteredToaNha.length} tòa nhà được tìm thấy
+              </CardDescription>
+            </div>
+            <div className="w-64">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                <Input
+                  placeholder="Tìm kiếm tòa nhà..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-0">
           <ToaNhaDataTable
             data={filteredToaNha}
             onEdit={handleEdit}
@@ -272,80 +300,77 @@ export default function ToaNhaPage() {
       </Card>
 
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
-        <div className="flex justify-between items-center">
-          <h2 className="text-base font-semibold">Danh sách tòa nhà</h2>
-          <span className="text-xs text-gray-600">{filteredToaNha.length} tòa nhà</span>
-        </div>
-
-        {/* Mobile Filters */}
-        <div className="space-y-2">
+      <div className="md:hidden space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-3">Danh sách tòa nhà</h2>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Tìm kiếm tòa nhà..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-sm"
+              className="pl-10 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
         </div>
-        
+
         {filteredToaNha.length === 0 ? (
-          <Card className="p-6 text-center">
-            <Building2 className="h-10 w-10 mx-auto text-gray-400 mb-3" />
-            <h3 className="text-base font-medium text-gray-900 mb-1">Không tìm thấy tòa nhà nào</h3>
-            <p className="text-sm text-gray-600">Thử thay đổi tìm kiếm</p>
-          </Card>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-8 text-center">
+            <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 w-fit mx-auto mb-3">
+              <Building2 className="h-6 w-6 text-zinc-400" />
+            </div>
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">Không tìm thấy tòa nhà nào</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Thử thay đổi tìm kiếm</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-4">
             {filteredToaNha.map((toaNha) => {
               const phongTrong = (toaNha as any).phongTrong || 0;
               const phongDangThue = (toaNha as any).phongDangThue || 0;
               const tongPhong = toaNha.tongSoPhong;
-              
+
               return (
-                <Card key={toaNha._id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building2 className="h-4 w-4 text-blue-600" />
-                          <h3 className="font-semibold text-base">{toaNha.tenToaNha}</h3>
-                        </div>
-                        <div className="flex items-start gap-1.5 text-xs text-gray-600">
+                <div key={toaNha._id} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900/30">
+                  <div className="p-4">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20 flex-shrink-0">
+                        <Building2 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base text-zinc-900 dark:text-white">{toaNha.tenToaNha}</h3>
+                        <div className="flex items-start gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                           <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                           <span className="line-clamp-2">{formatAddress(toaNha.diaChi)}</span>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-gray-50 rounded-md">
+
+                    <div className="grid grid-cols-3 gap-3 mb-4 p-3 bg-gradient-to-r from-orange-50 to-rose-50 dark:from-orange-900/10 dark:to-rose-900/10 rounded-lg border border-orange-100 dark:border-orange-900/20">
                       <div className="text-center">
-                        <div className="text-xs text-gray-600">Tổng</div>
-                        <div className="text-sm font-semibold">{tongPhong}</div>
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Tổng</div>
+                        <div className="text-lg font-bold text-zinc-900 dark:text-white">{tongPhong}</div>
                       </div>
-                      <div className="text-center border-x border-gray-200">
-                        <div className="text-xs text-gray-600">Trống</div>
-                        <div className="text-sm font-semibold text-green-600">{phongTrong}</div>
+                      <div className="text-center border-x border-orange-200 dark:border-orange-900/30">
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Trống</div>
+                        <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{phongTrong}</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-gray-600">Thuê</div>
-                        <div className="text-sm font-semibold text-blue-600">{phongDangThue}</div>
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Thuê</div>
+                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{phongDangThue}</div>
                       </div>
                     </div>
 
                     {toaNha.tienNghiChung && toaNha.tienNghiChung.length > 0 && (
-                      <div className="mb-3">
-                        <div className="text-xs text-gray-600 mb-1">Tiện nghi:</div>
-                        <div className="flex flex-wrap gap-1">
+                      <div className="mb-4">
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400 font-medium mb-2">Tiện nghi:</div>
+                        <div className="flex flex-wrap gap-2">
                           {toaNha.tienNghiChung.slice(0, 3).map((tienNghi) => (
-                            <Badge key={tienNghi} variant="secondary" className="text-xs">
+                            <Badge key={tienNghi} className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-900/50 text-xs">
                               {tienNghi}
                             </Badge>
                           ))}
                           {toaNha.tienNghiChung.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 text-xs">
                               +{toaNha.tienNghiChung.length - 3}
                             </Badge>
                           )}
@@ -353,40 +378,37 @@ export default function ToaNhaPage() {
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const publicUrl = `${window.location.origin}/xem-phong`;
-                            navigator.clipboard.writeText(publicUrl);
-                            toast.success('Đã sao chép link trang xem phòng');
-                          }}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                          title="Copy link trang xem phòng"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(toaNha)}
-                          className="flex-1 text-xs"
-                        >
-                          <Edit className="h-3.5 w-3.5 mr-1" />
-                          Sửa
-                        </Button>
-                        <DeleteConfirmPopover
-                          onConfirm={() => handleDelete(toaNha._id!)}
-                          title="Xóa tòa nhà"
-                          description="Bạn có chắc chắn muốn xóa tòa nhà này?"
-                          className="text-black hover:text-red-700 hover:bg-red-50"
-                        />
-                      </div>
+                    <div className="flex gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const publicUrl = `${window.location.origin}/xem-phong`;
+                          navigator.clipboard.writeText(publicUrl);
+                          toast.success('Đã sao chép link trang xem phòng');
+                        }}
+                        className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-emerald-200 dark:border-emerald-900/30 text-xs"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(toaNha)}
+                        className="flex-1 text-xs border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                      >
+                        <Edit className="h-3.5 w-3.5 mr-1.5" />
+                        Sửa
+                      </Button>
+                      <DeleteConfirmPopover
+                        onConfirm={() => handleDelete(toaNha._id!)}
+                        title="Xóa tòa nhà"
+                        description="Bạn có chắc chắn muốn xóa tòa nhà này?"
+                        className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/30"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -483,113 +505,148 @@ function ToaNhaForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="tenToaNha" className="text-sm">Tên tòa nhà</Label>
+        <Label htmlFor="tenToaNha" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tên tòa nhà</Label>
         <Input
           id="tenToaNha"
           value={formData.tenToaNha}
           onChange={(e) => setFormData(prev => ({ ...prev, tenToaNha: e.target.value }))}
           required
-          className="text-sm"
+          className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+          placeholder="Tên tòa nhà"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="soNha" className="text-sm">Số nhà</Label>
+          <Label htmlFor="soNha" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Số nhà</Label>
           <Input
             id="soNha"
             value={formData.soNha}
             onChange={(e) => setFormData(prev => ({ ...prev, soNha: e.target.value }))}
             required
-            className="text-sm"
+            className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Số nhà"
           />
         </div>
-        
+
         <div className="space-y-2">
-          <Label htmlFor="duong" className="text-sm">Tên đường</Label>
+          <Label htmlFor="duong" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tên đường</Label>
           <Input
             id="duong"
             value={formData.duong}
             onChange={(e) => setFormData(prev => ({ ...prev, duong: e.target.value }))}
             required
-            className="text-sm"
+            className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Tên đường"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="phuong" className="text-sm">Phường/Xã</Label>
+          <Label htmlFor="phuong" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Phường/Xã</Label>
           <Input
             id="phuong"
             value={formData.phuong}
             onChange={(e) => setFormData(prev => ({ ...prev, phuong: e.target.value }))}
             required
-            className="text-sm"
+            className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Phường/Xã"
           />
         </div>
-        
+
         <div className="space-y-2">
-          <Label htmlFor="quan" className="text-sm">Quận/Huyện</Label>
+          <Label htmlFor="quan" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Quận/Huyện</Label>
           <Input
             id="quan"
             value={formData.quan}
             onChange={(e) => setFormData(prev => ({ ...prev, quan: e.target.value }))}
             required
-            className="text-sm"
+            className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Quận/Huyện"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="thanhPho" className="text-sm">Thành phố</Label>
+        <Label htmlFor="thanhPho" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Thành phố</Label>
         <Input
           id="thanhPho"
           value={formData.thanhPho}
           onChange={(e) => setFormData(prev => ({ ...prev, thanhPho: e.target.value }))}
           required
-          className="text-sm"
+          className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+          placeholder="Thành phố"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="moTa" className="text-sm">Mô tả</Label>
+        <Label htmlFor="moTa" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Mô tả</Label>
         <Textarea
           id="moTa"
           value={formData.moTa}
           onChange={(e) => setFormData(prev => ({ ...prev, moTa: e.target.value }))}
           rows={3}
-          className="text-sm"
+          className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+          placeholder="Mô tả chi tiết về tòa nhà"
         />
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm">Tiện nghi chung</Label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {tienNghiOptions.map((option) => (
-            <div key={option.value} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id={option.value}
-                checked={formData.tienNghiChung.includes(option.value)}
-                onChange={(e) => handleTienNghiChange(option.value, e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor={option.value} className="text-sm">
-                {option.label}
-              </Label>
-            </div>
-          ))}
+      <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-4">
+        <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tiện nghi chung</Label>
+        <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center space-x-2 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+            <input
+              type="checkbox"
+              id="chon-tat-ca"
+              checked={formData.tienNghiChung.length === tienNghiOptions.length}
+              onChange={(e) =>
+                setFormData(prev => ({
+                  ...prev,
+                  tienNghiChung: e.target.checked ? tienNghiOptions.map(o => o.value) : [],
+                }))
+              }
+              className="rounded border-zinc-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+            />
+            <Label htmlFor="chon-tat-ca" className="text-sm font-medium cursor-pointer">
+              Chọn tất cả
+            </Label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            {tienNghiOptions.map((option) => (
+              <div key={option.value} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={option.value}
+                  checked={formData.tienNghiChung.includes(option.value)}
+                  onChange={(e) => handleTienNghiChange(option.value, e.target.checked)}
+                  className="rounded border-zinc-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                />
+                <Label htmlFor={option.value} className="text-sm cursor-pointer">
+                  {option.label}
+                </Label>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <DialogFooter className="gap-2">
-        <Button type="button" variant="outline" onClick={onClose} className="text-sm">
+      <DialogFooter className="gap-2 border-t border-zinc-200 dark:border-zinc-800 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          className="border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        >
           Hủy
         </Button>
-        <Button type="submit" className="text-sm">
+        <Button
+          type="submit"
+          className="bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+        >
           {toaNha ? 'Cập nhật' : 'Thêm mới'}
         </Button>
       </DialogFooter>

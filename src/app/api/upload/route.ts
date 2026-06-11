@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         public_id: cloudinaryResult.public_id,
+        url: cloudinaryResult.secure_url,  // thêm dòng này
+
         secure_url: cloudinaryResult.secure_url,
         width: cloudinaryResult.width,
         height: cloudinaryResult.height,

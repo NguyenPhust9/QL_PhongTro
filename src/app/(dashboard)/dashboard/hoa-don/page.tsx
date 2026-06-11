@@ -192,15 +192,15 @@ export default function HoaDonPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'chuaThanhToan':
-        return <Badge variant="destructive">Chưa thanh toán</Badge>;
+        return <Badge className="bg-red-50 text-red-700 border-red-100">Chưa thanh toán</Badge>;
       case 'daThanhToanMotPhan':
-        return <Badge variant="secondary">Thanh toán một phần</Badge>;
+        return <Badge className="bg-yellow-50 text-yellow-800 border-yellow-100">Thanh toán một phần</Badge>;
       case 'daThanhToan':
-        return <Badge variant="default">Đã thanh toán</Badge>;
+        return <Badge className="bg-green-50 text-green-700 border-green-100">Đã thanh toán</Badge>;
       case 'quaHan':
-        return <Badge variant="outline">Quá hạn</Badge>;
+        return <Badge className="bg-orange-50 text-orange-700 border-orange-100">Quá hạn</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge className="bg-gray-50 text-gray-700 border-gray-100">{status}</Badge>;
     }
   };
 
@@ -572,98 +572,102 @@ export default function HoaDonPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          <div>
+            <div className="h-6 bg-gray-300 rounded w-48 animate-pulse mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          </div>
         </div>
-        <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+          ))}
+        </div>
+        <div className="h-72 bg-gray-200 rounded animate-pulse"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Quản lý hóa đơn</h1>
-          <p className="text-xs md:text-sm text-gray-600">Danh sách tất cả hóa đơn trong hệ thống</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">Quản lý hóa đơn</h1>
+          <p className="text-sm text-gray-500 mt-1">Danh sách tất cả hóa đơn trong hệ thống</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={cache.isRefreshing}
-            className="flex-1 sm:flex-none"
-          >
+        <div className="hidden sm:flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={handleRefresh} className="flex-1 sm:flex-none border border-gray-200 hover:shadow-sm">
             <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
-          <Button size="sm" onClick={() => router.push('/dashboard/hoa-don/them-moi')} className="flex-1 sm:flex-none">
+          <Button size="sm" onClick={() => router.push('/dashboard/hoa-don/them-moi')} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white">
             <Plus className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Tạo hóa đơn</span>
-            <span className="sm:hidden">Tạo</span>
           </Button>
         </div>
       </div>
 
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 md:gap-4 lg:gap-6">
-        <Card className="p-2 md:p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4 bg-gradient-to-br from-blue-50 to-white border border-blue-100 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng hóa đơn</p>
-              <p className="text-base md:text-2xl font-bold">{hoaDonList.length}</p>
+              <p className="text-xs font-medium text-blue-600">Tổng hóa đơn</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{hoaDonList.length}</p>
             </div>
-            <Receipt className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Receipt className="h-5 w-5 text-blue-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-red-50 to-white border border-red-100 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Chưa thanh toán</p>
-              <p className="text-base md:text-2xl font-bold text-red-600">
-                {hoaDonList.filter(h => h.trangThai === 'chuaThanhToan').length}
-              </p>
+              <p className="text-xs font-medium text-red-600">Chưa thanh toán</p>
+              <p className="text-2xl font-bold text-red-700 mt-1">{hoaDonList.filter(h => h.trangThai === 'chuaThanhToan').length}</p>
             </div>
-            <Receipt className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
+            <div className="bg-red-100 p-2 rounded-lg">
+              <Receipt className="h-5 w-5 text-red-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-orange-50 to-white border border-orange-100 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Quá hạn</p>
-              <p className="text-base md:text-2xl font-bold text-orange-600">
-                {hoaDonList.filter(h => new Date(h.hanThanhToan) < new Date()).length}
-              </p>
+              <p className="text-xs font-medium text-orange-600">Quá hạn</p>
+              <p className="text-2xl font-bold text-orange-700 mt-1">{hoaDonList.filter(h => new Date(h.hanThanhToan) < new Date()).length}</p>
             </div>
-            <AlertCircle className="h-3 w-3 md:h-4 md:w-4 text-orange-600" />
+            <div className="bg-orange-100 p-2 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
           <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Doanh thu</p>
-              <p className="text-xs md:text-2xl font-bold text-green-600 truncate">
-                {formatCurrency(hoaDonList.reduce((sum, h) => sum + h.daThanhToan, 0))}
-              </p>
+            <div>
+              <p className="text-xs font-medium text-green-600">Doanh thu</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(hoaDonList.reduce((sum, h) => sum + h.daThanhToan, 0))}</p>
             </div>
-            <Receipt className="h-3 w-3 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
+            <div className="bg-green-100 p-2 rounded-lg">
+              <Receipt className="h-5 w-5 text-green-600" />
+            </div>
           </div>
         </Card>
       </div>
 
       {/* Desktop Table */}
-      <Card className="hidden md:block">
-        <CardHeader>
-          <CardTitle>Danh sách hóa đơn</CardTitle>
-          <CardDescription>
-            {filteredHoaDon.length} hóa đơn được tìm thấy
-          </CardDescription>
+      <Card className="hidden md:block border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b pb-4">
+          <CardTitle className="text-xl text-gray-900">Danh sách hóa đơn</CardTitle>
+          <CardDescription className="text-gray-600 mt-2">{filteredHoaDon.length} hóa đơn được tìm thấy</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <HoaDonDataTable
@@ -700,19 +704,19 @@ export default function HoaDonPage() {
         </div>
         
         {/* Mobile Filters */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-3 mb-4 bg-white p-3 rounded-lg border border-gray-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Tìm kiếm hóa đơn..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-sm"
+              className="pl-10 text-sm bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent>
@@ -723,7 +727,7 @@ export default function HoaDonPage() {
               </SelectContent>
             </Select>
             <Select value={monthFilter} onValueChange={setMonthFilter}>
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Tháng" />
               </SelectTrigger>
               <SelectContent>
@@ -736,7 +740,7 @@ export default function HoaDonPage() {
               </SelectContent>
             </Select>
             <Select value={yearFilter} onValueChange={setYearFilter}>
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Năm" />
               </SelectTrigger>
               <SelectContent>
@@ -869,9 +873,9 @@ export default function HoaDonPage() {
           {viewingHoaDon && (
             <div className="space-y-4 md:space-y-6">
               {/* Invoice Header */}
-              <div className="text-center border-b pb-3 md:pb-4">
+              <div className="text-center border-b pb-3 md:pb-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md -mx-6 md:-mx-8 px-6 md:px-8">
                 <h2 className="text-lg md:text-2xl font-bold">HÓA ĐƠN THUÊ PHÒNG</h2>
-                <p className="text-base md:text-lg text-gray-600">{viewingHoaDon.maHoaDon}</p>
+                <p className="text-base md:text-lg text-blue-100">{viewingHoaDon.maHoaDon}</p>
               </div>
 
               {/* Invoice Info */}
@@ -986,18 +990,18 @@ export default function HoaDonPage() {
 
               {/* Actions */}
               <DialogFooter className="flex-col sm:flex-row gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsViewDialogOpen(false)} className="w-full sm:w-auto">
+                <Button variant="ghost" size="sm" onClick={() => setIsViewDialogOpen(false)} className="w-full sm:w-auto">
                   Đóng
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleCopyLink(viewingHoaDon)} className="w-full sm:w-auto">
+                <Button variant="ghost" size="sm" onClick={() => handleCopyLink(viewingHoaDon)} className="w-full sm:w-auto">
                   <Copy className="h-3 w-3 md:h-4 md:w-4 mr-2" />
-                  Copy link
+                  Sao chép link
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleDownload(viewingHoaDon)} className="w-full sm:w-auto">
                   <Download className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                   Tải HTML
                 </Button>
-                <Button size="sm" onClick={() => handleScreenshot(viewingHoaDon)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => handleScreenshot(viewingHoaDon)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
                   <Camera className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                   Xuất PDF
                 </Button>

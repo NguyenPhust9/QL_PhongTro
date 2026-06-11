@@ -154,13 +154,13 @@ export default function ThanhToanPage() {
   const getMethodBadge = (method: string) => {
     switch (method) {
       case 'tienMat':
-        return <Badge variant="default">Tiền mặt</Badge>;
+        return <Badge className="bg-green-50 text-green-700 border-green-100">Tiền mặt</Badge>;
       case 'chuyenKhoan':
-        return <Badge variant="secondary">Chuyển khoản</Badge>;
+        return <Badge className="bg-blue-50 text-blue-700 border-blue-100">Chuyển khoản</Badge>;
       case 'viDienTu':
-        return <Badge variant="outline">Ví điện tử</Badge>;
+        return <Badge className="bg-purple-50 text-purple-700 border-purple-100">Ví điện tử</Badge>;
       default:
-        return <Badge variant="outline">{method}</Badge>;
+        return <Badge className="bg-gray-50 text-gray-700 border-gray-100">{method}</Badge>;
     }
   };
 
@@ -241,122 +241,126 @@ export default function ThanhToanPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          <div>
+            <div className="h-6 bg-gray-300 rounded w-48 animate-pulse mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-96 animate-pulse"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+          </div>
         </div>
-        <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+          ))}
+        </div>
+        <div className="h-72 bg-gray-200 rounded animate-pulse"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Quản lý thanh toán</h1>
-          <p className="text-xs md:text-sm text-gray-600">Danh sách tất cả giao dịch thanh toán</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">Quản lý thanh toán</h1>
+          <p className="text-sm text-gray-500 mt-1">Danh sách tất cả giao dịch thanh toán</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={cache.isRefreshing}
-            className="flex-1 sm:flex-none"
-          >
+        <div className="hidden sm:flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={handleRefresh} className="flex-1 sm:flex-none border border-gray-200 hover:shadow-sm">
             <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" onClick={() => setEditingThanhToan(null)} className="flex-1 sm:flex-none">
+              <Button size="sm" onClick={() => setEditingThanhToan(null)} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Thêm thanh toán</span>
-                <span className="sm:hidden">Thêm</span>
               </Button>
             </DialogTrigger>
-          <DialogContent className="w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingThanhToan ? 'Chỉnh sửa thanh toán' : 'Thêm thanh toán mới'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingThanhToan ? 'Cập nhật thông tin thanh toán' : 'Nhập thông tin thanh toán mới'}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <ThanhToanForm 
-              thanhToan={editingThanhToan}
-              hoaDonList={hoaDonList}
-              onClose={() => setIsDialogOpen(false)}
-              onSuccess={() => {
-                cache.clearCache();
-                setIsDialogOpen(false);
-                fetchData(true);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+            <DialogContent className="w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingThanhToan ? 'Chỉnh sửa thanh toán' : 'Thêm thanh toán mới'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingThanhToan ? 'Cập nhật thông tin thanh toán' : 'Nhập thông tin thanh toán mới'}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <ThanhToanForm 
+                thanhToan={editingThanhToan}
+                hoaDonList={hoaDonList}
+                onClose={() => setIsDialogOpen(false)}
+                onSuccess={() => {
+                  cache.clearCache();
+                  setIsDialogOpen(false);
+                  fetchData(true);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 md:gap-4 lg:gap-6">
-        <Card className="p-2 md:p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4 bg-gradient-to-br from-blue-50 to-white border border-blue-100 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng giao dịch</p>
-              <p className="text-base md:text-2xl font-bold">{thanhToanList.length}</p>
+              <p className="text-xs font-medium text-blue-600">Tổng giao dịch</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{thanhToanList.length}</p>
             </div>
-            <CreditCard className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tiền mặt</p>
-              <p className="text-base md:text-2xl font-bold text-green-600">
-                {thanhToanList.filter(t => t.phuongThuc === 'tienMat').length}
-              </p>
+              <p className="text-xs font-medium text-green-600">Tiền mặt</p>
+              <p className="text-2xl font-bold text-green-700 mt-1">{thanhToanList.filter(t => t.phuongThuc === 'tienMat').length}</p>
             </div>
-            <CreditCard className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
+            <div className="bg-green-100 p-2 rounded-lg">
+              <CreditCard className="h-5 w-5 text-green-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-blue-50 to-white border border-blue-100 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Chuyển khoản</p>
-              <p className="text-base md:text-2xl font-bold text-blue-600">
-                {thanhToanList.filter(t => t.phuongThuc === 'chuyenKhoan').length}
-              </p>
+              <p className="text-xs font-medium text-blue-600">Chuyển khoản</p>
+              <p className="text-2xl font-bold text-blue-700 mt-1">{thanhToanList.filter(t => t.phuongThuc === 'chuyenKhoan').length}</p>
             </div>
-            <CreditCard className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+            </div>
           </div>
         </Card>
 
-        <Card className="p-2 md:p-4">
+        <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng tiền</p>
-              <p className="text-xs md:text-2xl font-bold text-green-600 truncate">
-                {formatCurrency(thanhToanList.reduce((sum, t) => sum + t.soTien, 0))}
-              </p>
+              <p className="text-xs font-medium text-green-600">Tổng tiền</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(thanhToanList.reduce((sum, t) => sum + t.soTien, 0))}</p>
             </div>
-            <Receipt className="h-3 w-3 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
+            <div className="bg-green-100 p-2 rounded-lg">
+              <Receipt className="h-5 w-5 text-green-600 flex-shrink-0" />
+            </div>
           </div>
         </Card>
       </div>
 
       {/* Desktop Table */}
-      <Card className="hidden md:block">
-        <CardHeader>
-          <CardTitle>Danh sách thanh toán</CardTitle>
-          <CardDescription>
-            {filteredThanhToan.length} giao dịch được tìm thấy
-          </CardDescription>
+      <Card className="hidden md:block border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b pb-4">
+          <CardTitle className="text-xl text-gray-900">Danh sách thanh toán</CardTitle>
+          <CardDescription className="text-gray-600 mt-2">{filteredThanhToan.length} giao dịch được tìm thấy</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <ThanhToanDataTable
@@ -383,19 +387,19 @@ export default function ThanhToanPage() {
         </div>
         
         {/* Mobile Filters */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-3 mb-4 bg-white p-3 rounded-lg border border-gray-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Tìm kiếm thanh toán..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-sm"
+              className="pl-10 text-sm bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <Select value={methodFilter} onValueChange={setMethodFilter}>
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Phương thức" />
               </SelectTrigger>
               <SelectContent>
@@ -406,7 +410,7 @@ export default function ThanhToanPage() {
               </SelectContent>
             </Select>
             <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="text-sm">
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Thời gian" />
               </SelectTrigger>
               <SelectContent>
