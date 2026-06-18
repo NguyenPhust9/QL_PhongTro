@@ -59,6 +59,8 @@ export interface Phong {
   tienCoc: number;
   moTa?: string;
   anhPhong: string[];
+  videoPhong?: string[]; // thêm dòng này
+
   tienNghi: string[];
   trangThai: 'trong' | 'daDat' | 'dangThue' | 'baoTri';
   soNguoiToiDa: number;

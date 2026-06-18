@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useCache } from '@/hooks/use-cache';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PhongVideoUpload } from '@/components/ui/phong-video-upload';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -37,7 +38,8 @@ import {
   Copy,
   Info,
   Image,
-  RefreshCw
+  RefreshCw,
+  Video
 } from 'lucide-react';
 import {
   Carousel,
@@ -761,10 +763,12 @@ function PhongForm({
     tienCoc: phong?.tienCoc || 0,
     moTa: phong?.moTa || '',
     anhPhong: phong?.anhPhong || [],
-    tienNghi: phong?.tienNghi || [],
+    videoPhong: phong?.videoPhong || [],
+   tienNghi: phong?.tienNghi || [],
     soNguoiToiDa: phong?.soNguoiToiDa || 1,
     trangThai: phong?.trangThai || 'trong',
   });
+const [activeTab, setActiveTab] = useState('thong-tin');
 
   // Cập nhật formData khi phong thay đổi
   useEffect(() => {
@@ -784,6 +788,7 @@ function PhongForm({
         tienCoc: phong.tienCoc || 0,
         moTa: phong.moTa || '',
         anhPhong: phong.anhPhong || [],
+        videoPhong: phong.videoPhong || [],
         tienNghi: phong.tienNghi || [],
         soNguoiToiDa: phong.soNguoiToiDa || 1,
         trangThai: phong.trangThai || 'trong',
@@ -798,6 +803,7 @@ function PhongForm({
         tienCoc: 0,
         moTa: '',
         anhPhong: [],
+        videoPhong: [], // ✅ sửa ở đây
         tienNghi: [],
         soNguoiToiDa: 1,
         trangThai: 'trong',
@@ -842,7 +848,11 @@ const handleToggleAllTienNghi = () => {
 };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+      if (!formData.maPhong.trim()) {
+      setActiveTab('thong-tin');
+      toast.error('Mã phòng là bắt buộc');
+      return;
+    }
     try {
       const url = phong ? `/api/phong/${phong._id}` : '/api/phong';
       const method = phong ? 'PUT' : 'POST';
@@ -883,8 +893,8 @@ const handleToggleAllTienNghi = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Tabs defaultValue="thong-tin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-zinc-100 dark:bg-zinc-800">
+<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-zinc-100 dark:bg-zinc-800">
           <TabsTrigger value="thong-tin" className="flex items-center gap-2 text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900">
             <Info className="h-4 w-4" />
             Thông tin
@@ -893,6 +903,11 @@ const handleToggleAllTienNghi = () => {
             <Image className="h-4 w-4" />
             Ảnh phòng
           </TabsTrigger>
+          <TabsTrigger value="video-phong">
+      <Video className="h-4 w-4" />
+      Video phòng
+    </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="thong-tin" className="space-y-6 mt-6">
@@ -1088,6 +1103,22 @@ const handleToggleAllTienNghi = () => {
               images={formData.anhPhong}
               onImagesChange={(images: string[]) => setFormData(prev => ({ ...prev, anhPhong: images }))}
               maxImages={10}
+              className="w-full"
+            />
+          </div>
+        </TabsContent>
+          <TabsContent value="video-phong" className="space-y-6 mt-6">
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">Quản lý video phòng</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Tải lên video giới thiệu phòng
+              </p>
+            </div>
+
+            <PhongVideoUpload
+              videos={formData.videoPhong}
+              onVideosChange={(videos: string[]) => setFormData(prev => ({ ...prev, videoPhong: videos }))}
               className="w-full"
             />
           </div>

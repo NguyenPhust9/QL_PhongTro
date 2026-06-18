@@ -270,7 +270,7 @@ export default function XemPhongPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ) : (
+             ) : (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12 p-4 md:p-6">
                     <Home className="h-12 w-12 md:h-16 md:w-16 text-gray-400 mb-4" />
@@ -278,6 +278,33 @@ export default function XemPhongPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Video phòng */}
+              {selectedPhong.videoPhong && selectedPhong.videoPhong.length > 0 && (
+                <Card className="border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+                  <CardHeader className="p-4 md:p-6">
+                    <CardTitle className="text-base md:text-lg bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">
+                      Video phòng
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 md:p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                      {selectedPhong.videoPhong.map((videoUrl, index) => (
+                        <div key={index} className="aspect-video rounded-lg overflow-hidden bg-gray-100">
+                          <video
+                            src={videoUrl}
+                            controls
+                            preload="metadata"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Mô tả */}
 
               {/* Mô tả */}
               {selectedPhong.moTa && (

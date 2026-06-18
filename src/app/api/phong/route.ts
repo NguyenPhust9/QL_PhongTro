@@ -17,6 +17,7 @@ const phongSchema = z.object({
   tienCoc: z.number().min(0, 'Tiền cọc phải lớn hơn hoặc bằng 0'),
   moTa: z.string().optional(),
   anhPhong: z.array(z.string()).optional(),
+  videoPhong: z.array(z.string()).optional(),
   tienNghi: z.array(z.string()).optional(),
   soNguoiToiDa: z.number().min(1, 'Số người tối đa phải lớn hơn 0').max(10, 'Số người tối đa không được quá 10'),
 });
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
     const newPhong = new Phong({
       ...validatedData,
       anhPhong: validatedData.anhPhong || [],
+      videoPhong: validatedData.videoPhong || [],
       tienNghi: validatedData.tienNghi || [],
       trangThai: 'trong', // Mặc định là trống, sẽ được cập nhật tự động
     });
@@ -165,12 +167,12 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { message: error.errors[0].message },
-        { status: 400 }
-      );
-    }
+   if (error instanceof z.ZodError) {
+  return NextResponse.json(
+    { message: error.issues[0]?.message ?? "Dữ liệu không hợp lệ" },
+    { status: 400 }
+  );
+}
 
     console.error('Error creating phong:', error);
     return NextResponse.json(

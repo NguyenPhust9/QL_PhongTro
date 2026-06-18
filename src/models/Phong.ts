@@ -9,6 +9,8 @@ export interface IPhong extends Document {
   tienCoc: number;
   moTa?: string;
   anhPhong: string[];
+  videoPhong: string[]; // thêm dòng này
+
   tienNghi: string[];
   trangThai: 'trong' | 'daDat' | 'dangThue' | 'baoTri';
   soNguoiToiDa: number;
@@ -59,6 +61,10 @@ const PhongSchema = new Schema<IPhong>({
     type: String,
     trim: true
   }],
+  videoPhong: [{
+  type: String,
+  trim: true
+}],
   tienNghi: [{
     type: String,
     enum: [

@@ -276,9 +276,9 @@ export default function ThanhToanPage() {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" onClick={() => setEditingThanhToan(null)} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Thêm thanh toán</span>
-              </Button>
+  <Plus className="h-4 w-4 mr-2" />
+  <span>Thêm thanh toán</span>
+</Button>
             </DialogTrigger>
             <DialogContent className="w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>

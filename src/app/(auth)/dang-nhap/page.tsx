@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -33,12 +34,14 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     setError('');
+
     try {
       const result = await signIn('credentials', {
         email: data.email,
         matKhau: data.matKhau,
         redirect: false,
       });
+
       if (result?.error) {
         setError('Email hoặc mật khẩu không đúng');
       } else {
@@ -55,7 +58,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-amber-950/30 dark:via-zinc-950 dark:to-rose-950/30 flex items-center justify-center px-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-0 w-full max-w-5xl items-center">
 
-        {/* Left: Visual - warm welcome illustration zone */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -68,9 +70,14 @@ export default function LoginPage() {
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
                   <Key className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">Phòng Trọ</h1>
+                <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+                  Phòng Trọ
+                </h1>
               </div>
-              <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Quản lý cho thuê phòng</p>
+
+              <p className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                Quản lý cho thuê phòng
+              </p>
             </div>
 
             <div className="space-y-4 pt-8">
@@ -83,11 +90,17 @@ export default function LoginPage() {
                   key={idx}
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 + idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{
+                    duration: 0.5,
+                    delay: 0.1 + idx * 0.1,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   className="flex items-center gap-3"
                 >
                   <span className="text-2xl">{item.icon}</span>
-                  <span className="text-sm text-zinc-600 dark:text-zinc-300">{item.label}</span>
+                  <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                    {item.label}
+                  </span>
                 </motion.div>
               ))}
             </div>
@@ -98,7 +111,6 @@ export default function LoginPage() {
           </div>
         </motion.div>
 
-        {/* Right: Form */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -127,7 +139,6 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Email */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -136,18 +147,21 @@ export default function LoginPage() {
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
                   Email
                 </label>
+
                 <input
                   type="email"
                   placeholder="your@email.com"
                   {...register('email')}
-                  className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 dark:focus:border-orange-500 transition-all duration-200"
+                  className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200"
                 />
+
                 {errors.email && (
-                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.email.message}</p>
+                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                    {errors.email.message}
+                  </p>
                 )}
               </motion.div>
 
-              {/* Password */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -156,13 +170,15 @@ export default function LoginPage() {
                 <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
                   Mật khẩu
                 </label>
+
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     {...register('matKhau')}
-                    className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 dark:focus:border-orange-500 transition-all duration-200 pr-10"
+                    className="w-full px-4 py-3 pr-10 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all duration-200"
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -175,12 +191,14 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
+
                 {errors.matKhau && (
-                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.matKhau.message}</p>
+                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                    {errors.matKhau.message}
+                  </p>
                 )}
               </motion.div>
 
-              {/* Submit */}
               <motion.button
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -204,13 +222,23 @@ export default function LoginPage() {
 
             <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-6">
               Chưa có tài khoản?{' '}
-              <a
+              <Link
                 href="/dang-ky"
                 className="text-orange-600 dark:text-orange-400 font-semibold hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
               >
                 Đăng ký ngay
-              </a>
+              </Link>
             </p>
+
+            <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+              <Link
+                href="/khach-thue/dang-nhap"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all duration-200"
+              >
+                🏠 Đăng nhập với tư cách khách thuê
+              </Link>
+            </div>
+
           </div>
         </motion.div>
       </div>

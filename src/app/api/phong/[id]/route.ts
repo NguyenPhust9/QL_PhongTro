@@ -15,6 +15,7 @@ const phongSchema = z.object({
   giaThue: z.number().min(0, 'Giá thuê phải lớn hơn hoặc bằng 0'),
   tienCoc: z.number().min(0, 'Tiền cọc phải lớn hơn hoặc bằng 0'),
   moTa: z.string().optional(),
+  videoPhong: z.array(z.string()).optional(),
   anhPhong: z.array(z.string()).optional(),
   tienNghi: z.array(z.string()).optional(),
   soNguoiToiDa: z.number().min(1, 'Số người tối đa phải lớn hơn 0').max(10, 'Số người tối đa không được quá 10'),
@@ -98,6 +99,7 @@ export async function PUT(
       {
         ...validatedData,
         anhPhong: validatedData.anhPhong || [],
+        videoPhong: validatedData.videoPhong || [],
         tienNghi: validatedData.tienNghi || [],
         // Trạng thái sẽ được cập nhật tự động dựa trên hợp đồng
       },

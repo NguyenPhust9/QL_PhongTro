@@ -23,29 +23,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Kiểm tra loại file
-    if (!file.type.startsWith('image/')) {
+  // Kiểm tra loại file: chấp nhận cả ảnh và video
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { message: 'Chỉ được upload file ảnh' },
+        { message: 'Chỉ được upload file ảnh hoặc video' },
         { status: 400 }
       );
     }
 
-    // Kiểm tra kích thước file (tối đa 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Kiểm tra kích thước file: ảnh tối đa 10MB, video tối đa 100MB
+    const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
       return NextResponse.json(
-        { message: 'Kích thước file không được vượt quá 10MB' },
+        { message: `Kích thước file không được vượt quá ${isVideo ? 100 : 10}MB` },
         { status: 400 }
       );
     }
 
-    // Upload lên Cloudinary
+    // Upload lên Cloudinary - dùng resource_type tương ứng với loại file
+    const resourceType = isVideo ? 'video' : 'image';
     const cloudinaryFormData = new FormData();
     cloudinaryFormData.append('file', file);
     cloudinaryFormData.append('upload_preset', process.env.NEXT_PUBLIC_UPLOAD_PRESET || 'ml_default');
 
     const cloudinaryResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUD_NAME || 'duv9pccwi'}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUD_NAME || 'duv9pccwi'}/${resourceType}/upload`,
       {
         method: 'POST',
         body: cloudinaryFormData,

@@ -68,13 +68,13 @@ const NguoiDungSchema = new Schema<INguoiDung>({
   // English fields for compatibility
   name: {
     type: String,
-    required: [true, 'Name is required'],
+    required: [false, 'Name is required'],
     trim: true,
     maxlength: [100, 'Name cannot exceed 100 characters']
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: [false, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters']
   },
   phone: {

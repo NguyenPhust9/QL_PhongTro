@@ -860,160 +860,241 @@ export default function HoaDonPage() {
         )}
       </div>
 
-      {/* View Invoice Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg md:text-xl">Chi tiết hóa đơn</DialogTitle>
-            <DialogDescription className="text-xs md:text-sm">
-              Thông tin chi tiết hóa đơn {viewingHoaDon?.maHoaDon}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {viewingHoaDon && (
-            <div className="space-y-4 md:space-y-6">
-              {/* Invoice Header */}
-              <div className="text-center border-b pb-3 md:pb-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-md -mx-6 md:-mx-8 px-6 md:px-8">
-                <h2 className="text-lg md:text-2xl font-bold">HÓA ĐƠN THUÊ PHÒNG</h2>
-                <p className="text-base md:text-lg text-blue-100">{viewingHoaDon.maHoaDon}</p>
-              </div>
+     
+{/* View Invoice Dialog */}
+<Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+<DialogContent className="w-[750px] max-w-[95vw] overflow-hidden p-4">
+        <DialogHeader>
+      <DialogTitle className="text-xl font-bold">
+        Chi tiết hóa đơn
+      </DialogTitle>
+      <DialogDescription>
+        Thông tin chi tiết hóa đơn {viewingHoaDon?.maHoaDon}
+      </DialogDescription>
+    </DialogHeader>
 
-              {/* Invoice Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                <div>
-                  <h3 className="text-sm md:text-base font-semibold mb-2">Thông tin phòng</h3>
-                  <p className="text-xs md:text-sm"><strong>Phòng:</strong> {getPhongName(viewingHoaDon.phong, phongList)}</p>
-                  <p className="text-xs md:text-sm"><strong>Khách thuê:</strong> {getKhachThueName(viewingHoaDon.khachThue, khachThueList)}</p>
-                  <p className="text-xs md:text-sm"><strong>Hợp đồng:</strong> {
-                    hopDongList.find(hd => hd._id === viewingHoaDon.hopDong)?.maHopDong || 'N/A'
-                  }</p>
-                </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-semibold mb-2">Thông tin thanh toán</h3>
-                  <p className="text-xs md:text-sm"><strong>Tháng/Năm:</strong> {viewingHoaDon.thang}/{viewingHoaDon.nam}</p>
-                  <p className="text-xs md:text-sm"><strong>Hạn thanh toán:</strong> {new Date(viewingHoaDon.hanThanhToan).toLocaleDateString('vi-VN')}</p>
-                  <p className="text-xs md:text-sm"><strong>Trạng thái:</strong> {getStatusBadge(viewingHoaDon.trangThai)}</p>
-                </div>
-              </div>
+    {viewingHoaDon && (
+      <div className="space-y-2">
 
-              {/* Chỉ số điện nước */}
-              <div>
-                <h3 className="text-sm md:text-base font-semibold mb-3">Chỉ số điện nước</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Điện</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>Chỉ số ban đầu:</span>
-                        <span>{viewingHoaDon.chiSoDienBanDau || 0} kWh</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Chỉ số cuối kỳ:</span>
-                        <span>{viewingHoaDon.chiSoDienCuoiKy || 0} kWh</span>
-                      </div>
-                      <div className="flex justify-between font-medium">
-                        <span>Số điện sử dụng:</span>
-                        <span>{viewingHoaDon.soDien || 0} kWh</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Nước</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span>Chỉ số ban đầu:</span>
-                        <span>{viewingHoaDon.chiSoNuocBanDau || 0} m³</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Chỉ số cuối kỳ:</span>
-                        <span>{viewingHoaDon.chiSoNuocCuoiKy || 0} m³</span>
-                      </div>
-                      <div className="flex justify-between font-medium">
-                        <span>Số nước sử dụng:</span>
-                        <span>{viewingHoaDon.soNuoc || 0} m³</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* Invoice Header */}
+<div className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white p-2 text-center">
+<h2 className="text-lg font-bold">
+              HÓA ĐƠN THUÊ PHÒNG
+          </h2>
+          <p className="text-blue-100 mt-1">
+            {viewingHoaDon.maHoaDon}
+          </p>
+        </div>
 
-              {/* Invoice Details */}
-              <div>
-                <h3 className="text-sm md:text-base font-semibold mb-3">Chi tiết hóa đơn</h3>
-                <div className="space-y-2 text-xs md:text-sm">
-                  <div className="flex justify-between">
-                    <span>Tiền phòng</span>
-                    <span>{formatCurrency(viewingHoaDon.tienPhong)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tiền điện ({viewingHoaDon.soDien} kWh)</span>
-                    <span>{formatCurrency(viewingHoaDon.tienDien)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tiền nước ({viewingHoaDon.soNuoc} m³)</span>
-                    <span>{formatCurrency(viewingHoaDon.tienNuoc)}</span>
-                  </div>
-                  {viewingHoaDon.phiDichVu.map((phi, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span>{phi.ten}</span>
-                      <span>{formatCurrency(phi.gia)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {/* Thông tin tổng hợp */}
+<div className="rounded-lg border bg-gray-50 p-3">
+<div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+    <div>
+      <span className="text-gray-500">Phòng:</span>{' '}
+      <span className="font-medium">
+        {getPhongName(viewingHoaDon.phong, phongList)}
+      </span>
+    </div>
 
-              {/* Total */}
-              <div className="border-t pt-3 md:pt-4">
-                <div className="flex justify-between text-base md:text-lg font-semibold">
-                  <span>Tổng tiền:</span>
-                  <span>{formatCurrency(viewingHoaDon.tongTien)}</span>
-                </div>
-                <div className="flex justify-between text-xs md:text-sm">
-                  <span>Đã thanh toán:</span>
-                  <span className="text-green-600">{formatCurrency(viewingHoaDon.daThanhToan)}</span>
-                </div>
-                <div className="flex justify-between text-xs md:text-sm">
-                  <span>Còn lại:</span>
-                  <span className={viewingHoaDon.conLai > 0 ? 'text-red-600 font-semibold' : 'text-green-600'}>
-                    {formatCurrency(viewingHoaDon.conLai)}
-                  </span>
-                </div>
-              </div>
+    <div>
+      <span className="text-gray-500">Tháng:</span>{' '}
+      {viewingHoaDon.thang}/{viewingHoaDon.nam}
+    </div>
 
-              {/* Notes */}
-              {viewingHoaDon.ghiChu && (
-                <div>
-                  <h3 className="text-sm md:text-base font-semibold mb-2">Ghi chú</h3>
-                  <p className="text-xs md:text-sm text-gray-600">{viewingHoaDon.ghiChu}</p>
-                </div>
-              )}
+    <div>
+      <span className="text-gray-500">Khách:</span>{' '}
+      {getKhachThueName(
+        viewingHoaDon.khachThue,
+        khachThueList
+      )}
+    </div>
 
-              {/* Actions */}
-              <DialogFooter className="flex-col sm:flex-row gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setIsViewDialogOpen(false)} className="w-full sm:w-auto">
-                  Đóng
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleCopyLink(viewingHoaDon)} className="w-full sm:w-auto">
-                  <Copy className="h-3 w-3 md:h-4 md:w-4 mr-2" />
-                  Sao chép link
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDownload(viewingHoaDon)} className="w-full sm:w-auto">
-                  <Download className="h-3 w-3 md:h-4 md:w-4 mr-2" />
-                  Tải HTML
-                </Button>
-                <Button size="sm" onClick={() => handleScreenshot(viewingHoaDon)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
-                  <Camera className="h-3 w-3 md:h-4 md:w-4 mr-2" />
-                  Xuất PDF
-                </Button>
-              </DialogFooter>
+    <div>
+      <span className="text-gray-500">Hạn TT:</span>{' '}
+      {new Date(
+        viewingHoaDon.hanThanhToan
+      ).toLocaleDateString('vi-VN')}
+    </div>
+
+    <div>
+      <span className="text-gray-500">Điện:</span>{' '}
+      {viewingHoaDon.chiSoDienBanDau || 0}
+      →
+      {viewingHoaDon.chiSoDienCuoiKy || 0}
+      ({viewingHoaDon.soDien || 0} kWh)
+    </div>
+
+    <div>
+      <span className="text-gray-500">Nước:</span>{' '}
+      {viewingHoaDon.chiSoNuocBanDau || 0}
+      →
+      {viewingHoaDon.chiSoNuocCuoiKy || 0}
+      ({viewingHoaDon.soNuoc || 0} m³)
+    </div>
+
+    <div>
+      <span className="text-gray-500">HĐ:</span>{' '}
+      {
+        hopDongList.find(
+          hd => hd._id === viewingHoaDon.hopDong
+        )?.maHopDong || 'N/A'
+      }
+    </div>
+
+    <div>
+      {getStatusBadge(viewingHoaDon.trangThai)}
+    </div>
+
+  </div>
+</div>
+
+        {/* Invoice Details */}
+        <div className="rounded-lg border overflow-hidden">
+          <div className="bg-gray-50 px-4 py-2 border-b">
+            <h3 className="font-semibold">
+              Chi tiết hóa đơn
+            </h3>
+          </div>
+
+          <div className="divide-y text-sm">
+
+            <div className="flex justify-between px-4 py-2">
+              <span>Tiền phòng</span>
+              <span>
+                {formatCurrency(viewingHoaDon.tienPhong)}
+              </span>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            <div className="flex justify-between px-4 py-2">
+              <span>
+                Tiền điện ({viewingHoaDon.soDien} kWh)
+              </span>
+              <span>
+                {formatCurrency(viewingHoaDon.tienDien)}
+              </span>
+            </div>
+
+            <div className="flex justify-between px-4 py-2">
+              <span>
+                Tiền nước ({viewingHoaDon.soNuoc} m³)
+              </span>
+              <span>
+                {formatCurrency(viewingHoaDon.tienNuoc)}
+              </span>
+            </div>
+
+            {viewingHoaDon.phiDichVu.map((phi, index) => (
+              <div
+                key={index}
+                className="flex justify-between px-4 py-2"
+              >
+                <span>{phi.ten}</span>
+                <span>{formatCurrency(phi.gia)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="rounded-xl bg-blue-50 border border-blue-200 p-5">
+
+          <div className="flex justify-between text-xl font-bold text-blue-700">
+            <span>Tổng tiền</span>
+            <span>
+              {formatCurrency(viewingHoaDon.tongTien)}
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-2 text-sm">
+
+            <div className="flex justify-between">
+              <span>Đã thanh toán</span>
+              <span className="text-green-600 font-medium">
+                {formatCurrency(viewingHoaDon.daThanhToan)}
+              </span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>Còn lại</span>
+              <span
+                className={
+                  viewingHoaDon.conLai > 0
+                    ? 'text-red-600 font-bold'
+                    : 'text-green-600 font-bold'
+                }
+              >
+                {formatCurrency(viewingHoaDon.conLai)}
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Notes */}
+        {viewingHoaDon.ghiChu && (
+          <div className="rounded-lg border p-4 bg-gray-50">
+            <h3 className="font-semibold mb-2">
+              Ghi chú
+            </h3>
+
+            <p className="text-sm text-gray-600">
+              {viewingHoaDon.ghiChu}
+            </p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsViewDialogOpen(false)}
+            className="w-full sm:w-auto"
+          >
+            Đóng
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleCopyLink(viewingHoaDon)}
+            className="w-full sm:w-auto"
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Sao chép link
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownload(viewingHoaDon)}
+            className="w-full sm:w-auto"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Tải HTML
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => handleScreenshot(viewingHoaDon)}
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+          >
+            <Camera className="h-4 w-4 mr-2" />
+            Xuất PDF
+          </Button>
+
+        </DialogFooter>
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
+```
+
 
       {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[98vw] md:w-full max-w-6xl overflow-hidden">   
           <DialogHeader>
             <DialogTitle className="text-lg md:text-xl">Xác nhận thanh toán</DialogTitle>
             <DialogDescription className="text-xs md:text-sm">
@@ -1111,8 +1192,8 @@ function PaymentForm({
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Thông tin hóa đơn */}
+<div className="space-y-3">
+        {/* Thông tin hóa đơn */}
       <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
         <h3 className="text-sm md:text-base font-semibold mb-3">Thông tin hóa đơn</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
