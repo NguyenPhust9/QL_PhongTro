@@ -16,6 +16,9 @@ import {
   Home,
   Building,
   Globe,
+    Map, 
+    Newspaper, // ← Thêm dòng này
+
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -37,6 +40,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Tạo navigation items dựa trên role
   const navMain = React.useMemo(() => {
     const baseItems = [
+       {
+    title: "Sơ đồ phòng",
+    url: "#",
+    icon: Map,
+    items: [
+      {
+        title: "Xem sơ đồ",
+        url: "/dashboard/so-do-phong",
+      },
+    ],
+    },
+     {
+  title: "Rao vặt",
+  url: "#",
+  icon: Newspaper,
+  items: [
+    {
+      title: "Xem rao vặt",
+      url: "/dashboard/rao-vat",
+    },
+    {
+      title: "Đăng bán",
+      url: "/dashboard/rao-vat/dang-ban",
+    },
+  ],
+},
       {
         title: "Quản lý cơ bản",
         url: "#",

@@ -224,7 +224,8 @@ export default function KhachThuePage() {
                 if (newKhachThue) {
                   if (editingKhachThue) {
                     setKhachThueList(prev => prev.map(kt =>
-                      kt._id === editingKhachThue._id ? newKhachThue : kt
+                      kt._id === editingKhachThue._id ? 
+                      newKhachThue : kt
                     ));
                   } else {
                     setKhachThueList(prev => [newKhachThue, ...prev]);

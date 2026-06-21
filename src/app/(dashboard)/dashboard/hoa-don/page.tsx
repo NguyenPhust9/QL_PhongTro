@@ -595,21 +595,22 @@ export default function HoaDonPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">Quản lý hóa đơn</h1>
-          <p className="text-sm text-gray-500 mt-1">Danh sách tất cả hóa đơn trong hệ thống</p>
-        </div>
-        <div className="hidden sm:flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={handleRefresh} className="flex-1 sm:flex-none border border-gray-200 hover:shadow-sm">
-            <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
-          </Button>
-          <Button size="sm" onClick={() => router.push('/dashboard/hoa-don/them-moi')} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white">
-            <Plus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Tạo hóa đơn</span>
-          </Button>
-        </div>
-      </div>
+  <div>
+    <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">Quản lý hóa đơn</h1>
+    <p className="text-sm text-gray-500 mt-1">Danh sách tất cả hóa đơn trong hệ thống</p>
+  </div>
+  {/* Bỏ hidden sm:flex → đổi thành flex */}
+  <div className="flex items-center gap-3">
+    <Button variant="ghost" size="sm" onClick={handleRefresh} className="border border-gray-200 hover:shadow-sm">
+      <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
+      <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
+    </Button>
+    <Button size="sm" onClick={() => router.push('/dashboard/hoa-don/them-moi')} className="bg-blue-600 hover:bg-blue-700 text-white">
+      <Plus className="h-4 w-4 sm:mr-2" />
+      <span className="hidden sm:inline">Tạo hóa đơn</span>
+    </Button>
+  </div>
+</div>
 
 
       {/* Stats Cards */}

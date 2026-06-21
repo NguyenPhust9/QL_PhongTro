@@ -11,7 +11,7 @@ import { z } from 'zod';
 const khachThueSchema = z.object({
   hoTen: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
   soDienThoai: z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'),
-  email: z.string().email('Email không hợp lệ').optional(),
+  email: z.union([z.string().email('Email không hợp lệ'), z.literal(''), z.undefined()]),
   cccd: z.string().regex(/^[0-9]{12}$/, 'CCCD phải có 12 chữ số'),
   ngaySinh: z.string().min(1, 'Ngày sinh là bắt buộc'),
   gioiTinh: z.enum(['nam', 'nu', 'khac']),

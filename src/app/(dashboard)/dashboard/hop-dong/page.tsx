@@ -932,8 +932,8 @@ export default function HopDongPage() {
             className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 transition-all hover:shadow-md"
           >
             <Plus className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Thêm hợp đồng</span>
-            <span className="sm:hidden">Thêm</span>
+            <span>Thêm hợp đồng</span>
+          <span className="sm:hidden">Thêm</span>
           </Button>
         </div>
       </div>

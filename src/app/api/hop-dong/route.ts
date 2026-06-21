@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
     const trangThai = searchParams.get('trangThai') || '';
+    const phongId = searchParams.get('phongId') || ''; // ← thêm
 
     const query: any = {};
     
@@ -64,7 +65,9 @@ export async function GET(request: NextRequest) {
     if (trangThai) {
       query.trangThai = trangThai;
     }
-
+      if (phongId) {
+        query.phong = phongId; // ← thêm
+      }
     const hopDongList = await HopDong.find(query)
       .populate({
         path: 'phong',
