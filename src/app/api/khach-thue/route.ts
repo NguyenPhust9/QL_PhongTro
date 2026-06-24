@@ -4,13 +4,15 @@ import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongodb';
 import KhachThue from '@/models/KhachThue';
 import HopDong from '@/models/HopDong';
-import Phong from '@/models/Phong';
+import '@/models/Phong';     // side-effect import
+import '@/models/ToaNha'; 
+
 import { updateKhachThueStatus } from '@/lib/status-utils';
 import { z } from 'zod';
 
 const khachThueSchema = z.object({
   hoTen: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
-  soDienThoai: z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'),
+  soDienThoai: z.union([z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'), z.literal(''), z.undefined()]),
   email: z.union([z.string().email('Email không hợp lệ'), z.literal(''), z.undefined()]),
   cccd: z.string().regex(/^[0-9]{12}$/, 'CCCD phải có 12 chữ số'),
   ngaySinh: z.string().min(1, 'Ngày sinh là bắt buộc'),
@@ -149,12 +151,11 @@ export async function POST(request: NextRequest) {
     await dbConnect();
 
     // Check if phone or CCCD already exists
-    const existingKhachThue = await KhachThue.findOne({
-      $or: [
-        { soDienThoai: validatedData.soDienThoai },
-        { cccd: validatedData.cccd }
-      ]
-    });
+    const orConditions: any[] = [{ cccd: validatedData.cccd }];
+if (validatedData.soDienThoai) {
+  orConditions.push({ soDienThoai: validatedData.soDienThoai });
+}
+const existingKhachThue = await KhachThue.findOne({ $or: orConditions });
 
     if (existingKhachThue) {
       return NextResponse.json(

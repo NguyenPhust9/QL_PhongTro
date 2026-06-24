@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 
 export interface IKhachThue extends Document {
   hoTen: string;
-  soDienThoai: string;
+  soDienThoai?: string;
   email?: string;
   cccd: string;
   ngaySinh: Date;
@@ -41,11 +41,11 @@ const KhachThueSchema = new Schema<IKhachThue>({
     maxlength: [100, 'Họ tên không được quá 100 ký tự']
   },
   soDienThoai: {
-    type: String,
-    required: [true, 'Số điện thoại là bắt buộc'],
-    unique: true,
-    match: [/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ']
-  },
+  type: String,
+  sparse: true,  // cho phép nhiều document có giá trị null/undefined
+  unique: true,
+  match: [/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ']
+},
   email: {
     type: String,
     lowercase: true,

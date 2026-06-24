@@ -625,7 +625,6 @@ function KhachThueForm({
                 id="soDienThoai"
                 value={formData.soDienThoai}
                 onChange={(e) => setFormData(prev => ({ ...prev, soDienThoai: e.target.value }))}
-                required
                 className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
                 placeholder="Nhập số điện thoại"
               />
