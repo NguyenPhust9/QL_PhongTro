@@ -166,6 +166,8 @@ const existingKhachThue = await KhachThue.findOne({ $or: orConditions });
 
     const newKhachThue = new KhachThue({
       ...validatedData,
+      soDienThoai: validatedData.soDienThoai || undefined, // ← thêm dòng này
+      email: validatedData.email || undefined,             // ← luôn xử lý cả email
       ngaySinh: new Date(validatedData.ngaySinh),
       anhCCCD: validatedData.anhCCCD || { matTruoc: '', matSau: '' },
       trangThai: 'chuaThue', // Mặc định là chưa thuê, sẽ được cập nhật tự động

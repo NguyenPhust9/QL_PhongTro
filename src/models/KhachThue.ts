@@ -48,6 +48,8 @@ const KhachThueSchema = new Schema<IKhachThue>({
 },
   email: {
     type: String,
+    unique: true,    // ← thêm
+    sparse: true,    // ← thêm
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Email không hợp lệ']
