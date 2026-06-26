@@ -216,6 +216,7 @@ export default function KhachThuePage() {
             </DialogHeader>
 
             <KhachThueForm
+              key={editingKhachThue?._id || 'new'}   // 👈 thêm dòng này
               khachThue={editingKhachThue}
               onClose={() => setIsDialogOpen(false)}
               onSuccess={(newKhachThue) => {
@@ -540,8 +541,8 @@ function KhachThueForm({
     gioiTinh: khachThue?.gioiTinh || 'nam',
     queQuan: khachThue?.queQuan || '',
     anhCCCD: {
-      matTruoc: khachThue?.anhCCCD.matTruoc || '',
-      matSau: khachThue?.anhCCCD.matSau || '',
+      matTruoc: khachThue?.anhCCCD?.matTruoc || '',
+      matSau: khachThue?.anhCCCD?.matSau || '',
     },
     ngheNghiep: khachThue?.ngheNghiep || '',
     matKhau: '',
@@ -565,7 +566,9 @@ if (!submitData.matKhau || submitData.matKhau.trim() === '') {
 if (!submitData.email || submitData.email.trim() === '') {
   (submitData as any).email = undefined;
 }
-
+if (!submitData.soDienThoai || submitData.soDienThoai.trim() === '') {
+  (submitData as any).soDienThoai = undefined;
+}
       const response = await fetch(url, {
         method,
         headers: {
