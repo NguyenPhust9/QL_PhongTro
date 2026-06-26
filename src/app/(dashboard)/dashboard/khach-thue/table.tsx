@@ -2,35 +2,13 @@
 
 import * as React from "react"
 import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type UniqueIdentifier,
-} from "@dnd-kit/core"
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import {
   Edit,
   Trash2,
   Eye,
   Phone,
   Mail,
   MapPin,
-  GripVertical,
   MoreVertical,
-  Columns,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -44,29 +22,19 @@ import {
   Key,
   Check,
   X,
+  FileText,
 } from "lucide-react"
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  Row,
-  SortingState,
-  useReactTable,
-  VisibilityState,
-} from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -81,304 +49,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Separator } from "@/components/ui/separator"
 import type { KhachThue } from '@/types'
 
-// Helper functions
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const getStatusBadge = (status: string) => {
   switch (status) {
     case 'dangThue':
       return (
-        <Badge variant="default" className="gap-1">
-          <User className="h-3 w-3" />
-          Đang thuê
+        <Badge variant="default" className="gap-1 bg-green-600 hover:bg-green-700">
+          <User className="h-3 w-3" />Đang thuê
         </Badge>
       )
     case 'daTraPhong':
-      return (
-        <Badge variant="secondary" className="gap-1">
-          Đã trả phòng
-        </Badge>
-      )
+      return <Badge variant="secondary" className="gap-1">Đã trả phòng</Badge>
     case 'chuaThue':
-      return (
-        <Badge variant="outline" className="gap-1">
-          Chưa thuê
-        </Badge>
-      )
+      return <Badge variant="outline" className="gap-1">Chưa thuê</Badge>
     default:
       return <Badge variant="outline">{status}</Badge>
   }
 }
 
-// Create a separate component for the drag handle
-function DragHandle({ id }: { id: string }) {
-  const { attributes, listeners } = useSortable({
-    id,
-  })
-
-  return (
-    <Button
-      {...attributes}
-      {...listeners}
-      variant="ghost"
-      size="icon"
-      className="text-muted-foreground size-7 hover:bg-transparent"
-    >
-      <GripVertical className="text-muted-foreground size-3" />
-      <span className="sr-only">Kéo để sắp xếp</span>
-    </Button>
-  )
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type KhachThueTableProps = {
   onView?: (khachThue: KhachThue) => void
   onEdit: (khachThue: KhachThue) => void
   onDelete: (id: string) => void
   actionLoading: string | null
-}
-
-const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
-  {
-    id: "drag",
-    header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
-    enableHiding: false,
-  },
-  {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Chọn tất cả"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Chọn hàng"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "hoTen",
-    header: "Họ tên",
-    cell: ({ row }) => (
-      <div className="min-w-40">
-        <div className="font-medium">{row.original.hoTen}</div>
-        <div className="text-xs text-muted-foreground capitalize">
-          {row.original.gioiTinh}
-        </div>
-      </div>
-    ),
-    enableHiding: false,
-  },
-  {
-    accessorKey: "soDienThoai",
-    header: "Liên hệ",
-    cell: ({ row }) => (
-      <div className="min-w-40">
-        <div className="flex items-center gap-2 text-sm">
-          <Phone className="h-3 w-3 text-muted-foreground" />
-          {row.original.soDienThoai}
-        </div>
-        {row.original.email && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Mail className="h-3 w-3" />
-            {row.original.email}
-          </div>
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "cccd",
-    header: "CCCD",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <CreditCard className="h-4 w-4 text-muted-foreground" />
-        <span className="font-mono text-sm">{row.original.cccd}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "ngaySinh",
-    header: "Ngày sinh",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-sm">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        {new Date(row.original.ngaySinh).toLocaleDateString('vi-VN')}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "queQuan",
-    header: "Quê quán",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <MapPin className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm max-w-xs truncate">{row.original.queQuan}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "ngheNghiep",
-    header: "Nghề nghiệp",
-    cell: ({ row }) => (
-      <span className="text-sm">{row.original.ngheNghiep || '-'}</span>
-    ),
-  },
-  {
-    accessorKey: "phongDangThue",
-    header: "Phòng đang thuê",
-    cell: ({ row }) => {
-      const khachThue = row.original as any;
-      const hopDong = khachThue.hopDongHienTai;
-      
-      if (!hopDong || !hopDong.phong) {
-        return (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Home className="h-4 w-4" />
-            <span className="text-sm">Chưa thuê</span>
-          </div>
-        );
-      }
-      
-      const phong = hopDong.phong;
-      const toaNha = phong.toaNha;
-      
-      return (
-        <div className="min-w-32">
-          <div className="flex items-center gap-2 mb-1">
-            <Home className="h-4 w-4 text-green-600" />
-            <div>
-              <div className="text-sm font-medium">
-                {phong.maPhong}
-              </div>
-              {toaNha && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Building2 className="h-3 w-3" />
-                  {toaNha.tenToaNha}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "matKhau",
-    header: "Tài khoản",
-    cell: ({ row }) => {
-      const khachThue = row.original as any;
-      const hasPassword = !!khachThue.matKhau;
-      
-      return (
-        <div className="flex items-center gap-2">
-          <Key className={`h-4 w-4 ${hasPassword ? 'text-green-600' : 'text-muted-foreground'}`} />
-          {hasPassword ? (
-            <Badge variant="default" className="gap-1 bg-green-600">
-              <Check className="h-3 w-3" />
-              Đã tạo
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="gap-1">
-              <X className="h-3 w-3" />
-              Chưa tạo
-            </Badge>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "trangThai",
-    header: "Trạng thái",
-    cell: ({ row }) => getStatusBadge(row.original.trangThai),
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <MoreVertical className="size-4" />
-            <span className="sr-only">Mở menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          {props.onView && (
-            <DropdownMenuItem onClick={() => props.onView!(row.original)}>
-              <Eye className="mr-2 h-4 w-4" />
-              Xem chi tiết
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem onClick={() => props.onEdit(row.original)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Chỉnh sửa
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
-            disabled={props.actionLoading === `delete-${row.original._id}`}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {props.actionLoading === `delete-${row.original._id}` ? 'Đang xóa...' : 'Xóa'}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-    enableHiding: false,
-  },
-]
-
-function DraggableRow({ row }: { row: Row<KhachThue> }) {
-  const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
-  })
-
-  return (
-    <TableRow
-      data-state={row.getIsSelected() && "selected"}
-      data-dragging={isDragging}
-      ref={setNodeRef}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: transition,
-      }}
-    >
-      {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
-    </TableRow>
-  )
 }
 
 type KhachThueDataTableProps = KhachThueTableProps & {
@@ -389,86 +88,390 @@ type KhachThueDataTableProps = KhachThueTableProps & {
   onTrangThaiChange?: (value: string) => void
 }
 
+// ─── Modal chi tiết ───────────────────────────────────────────────────────────
+
+function KhachThueDetailModal({
+  khachThue,
+  open,
+  onClose,
+  onEdit,
+  onDelete,
+  actionLoading,
+}: {
+  khachThue: KhachThue | null
+  open: boolean
+  onClose: () => void
+  onEdit: (k: KhachThue) => void
+  onDelete: (id: string) => void
+  actionLoading: string | null
+}) {
+  if (!khachThue) return null
+
+  const kt = khachThue as any
+  const hopDong = kt.hopDongHienTai
+  const phong = hopDong?.phong
+  const toaNha = phong?.toaNha
+  const hasPassword = !!kt.matKhau
+
+  const InfoRow = ({
+    icon: Icon,
+    label,
+    value,
+  }: {
+    icon: React.ElementType
+    label: string
+    value: React.ReactNode
+  }) => (
+    <div className="flex items-start gap-3 py-2">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-xs text-muted-foreground mb-0.5">{label}</div>
+        <div className="text-sm font-medium break-words">{value}</div>
+      </div>
+    </div>
+  )
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          {/* Avatar + tên + trạng thái */}
+          <div className="flex items-center gap-4 pb-1">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-muted text-xl font-bold text-muted-foreground uppercase">
+              {khachThue.hoTen.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-lg leading-tight">
+                {khachThue.hoTen}
+              </DialogTitle>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="text-xs text-muted-foreground capitalize">
+                  {khachThue.gioiTinh}
+                </span>
+                {getStatusBadge(khachThue.trangThai)}
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <Separator />
+
+        {/* Thông tin liên hệ */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            Liên hệ
+          </p>
+          <InfoRow icon={Phone} label="Số điện thoại" value={khachThue.soDienThoai} />
+          {khachThue.email && (
+            <InfoRow icon={Mail} label="Email" value={khachThue.email} />
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Thông tin cá nhân */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            Thông tin cá nhân
+          </p>
+          <InfoRow icon={CreditCard} label="CCCD" value={
+            <span className="font-mono">{khachThue.cccd}</span>
+          } />
+          <InfoRow icon={Calendar} label="Ngày sinh" value={
+            new Date(khachThue.ngaySinh).toLocaleDateString('vi-VN')
+          } />
+          <InfoRow icon={MapPin} label="Quê quán" value={khachThue.queQuan} />
+          {khachThue.ngheNghiep && (
+            <InfoRow icon={User} label="Nghề nghiệp" value={khachThue.ngheNghiep} />
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Phòng đang thuê */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            Phòng đang thuê
+          </p>
+          {phong ? (
+            <div className="flex flex-col gap-2 py-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-sm font-semibold">
+                  <Home className="h-3.5 w-3.5" />
+                  {phong.maPhong}
+                </div>
+                {toaNha && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-sm font-medium">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {toaNha.tenToaNha}
+                  </div>
+                )}
+              </div>
+              {hopDong && (
+                <div className="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground space-y-1">
+                  {hopDong.ngayBatDau && (
+                    <div className="flex justify-between">
+                      <span>Ngày bắt đầu</span>
+                      <span className="font-medium text-foreground">
+                        {new Date(hopDong.ngayBatDau).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  )}
+                  {hopDong.ngayKetThuc && (
+                    <div className="flex justify-between">
+                      <span>Ngày kết thúc</span>
+                      <span className="font-medium text-foreground">
+                        {new Date(hopDong.ngayKetThuc).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  )}
+                  {hopDong.giaThue && (
+                    <div className="flex justify-between">
+                      <span>Giá thuê</span>
+                      <span className="font-medium text-foreground">
+                        {Number(hopDong.giaThue).toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 py-2 text-muted-foreground text-sm">
+              <Home className="h-4 w-4" />
+              Chưa thuê phòng nào
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Tài khoản */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+            Tài khoản
+          </p>
+          <div className="flex items-center gap-2 py-2">
+            <Key className={`h-4 w-4 ${hasPassword ? 'text-green-600' : 'text-muted-foreground'}`} />
+            {hasPassword ? (
+              <Badge variant="default" className="gap-1 bg-green-600">
+                <Check className="h-3 w-3" />Đã tạo tài khoản
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="gap-1">
+                <X className="h-3 w-3" />Chưa tạo tài khoản
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-1">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => { onEdit(khachThue); onClose() }}
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Chỉnh sửa
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={() => { onDelete(khachThue._id!); onClose() }}
+            disabled={actionLoading === `delete-${khachThue._id}`}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            {actionLoading === `delete-${khachThue._id}` ? 'Đang xóa...' : 'Xóa'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Card đơn ─────────────────────────────────────────────────────────────────
+
+function KhachThueCard({
+  khachThue,
+  onCardClick,
+  onView,
+  onEdit,
+  onDelete,
+  actionLoading,
+}: {
+  khachThue: KhachThue
+  onCardClick: (k: KhachThue) => void
+} & KhachThueTableProps) {
+  const kt = khachThue as any
+  const hopDong = kt.hopDongHienTai
+  const phong = hopDong?.phong
+  const toaNha = phong?.toaNha
+  const hasPassword = !!kt.matKhau
+
+  return (
+    <div
+      className="relative rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col overflow-hidden"
+      onClick={() => onCardClick(khachThue)}
+    >
+      {/* Color strip */}
+      <div className={`h-1.5 w-full shrink-0 ${
+        khachThue.trangThai === 'dangThue' ? 'bg-green-500'
+        : khachThue.trangThai === 'daTraPhong' ? 'bg-muted-foreground/40'
+        : 'bg-border'
+      }`} />
+
+      <div className="p-4 flex flex-col gap-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-sm text-muted-foreground uppercase">
+              {khachThue.hoTen.charAt(0)}
+            </div>
+            <div>
+              <div className="font-semibold text-sm leading-tight">{khachThue.hoTen}</div>
+              <div className="text-xs text-muted-foreground capitalize mt-0.5">{khachThue.gioiTinh}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            {getStatusBadge(khachThue.trangThai)}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                {onView && (
+                  <DropdownMenuItem onClick={() => onView(khachThue)}>
+                    <Eye className="mr-2 h-4 w-4" />Xem chi tiết
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => onEdit(khachThue)}>
+                  <Edit className="mr-2 h-4 w-4" />Chỉnh sửa
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => onDelete(khachThue._id!)}
+                  disabled={actionLoading === `delete-${khachThue._id}`}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {actionLoading === `delete-${khachThue._id}` ? 'Đang xóa...' : 'Xóa'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        <div className="border-t" />
+
+        {/* Thông tin liên hệ */}
+        <div className="grid gap-1.5 text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            <span className="font-medium text-foreground">{khachThue.soDienThoai}</span>
+          </div>
+          {khachThue.email && (
+            <div className="flex items-center gap-2 text-muted-foreground truncate">
+              <Mail className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{khachThue.email}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <CreditCard className="h-3.5 w-3.5 shrink-0" />
+            <span className="font-mono">{khachThue.cccd}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{khachThue.queQuan}</span>
+          </div>
+        </div>
+
+        <div className="border-t" />
+
+        {/* Phòng + tài khoản */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          {phong ? (
+            <div className="flex flex-col gap-1">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-xs font-semibold w-fit">
+                <Home className="h-3 w-3" />{phong.maPhong}
+              </div>
+              {toaNha && (
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-medium w-fit">
+                  <Building2 className="h-3 w-3" />{toaNha.tenToaNha}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-xs font-medium">
+              <Home className="h-3 w-3" />Chưa thuê
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            <Key className={`h-3.5 w-3.5 ${hasPassword ? 'text-green-600' : 'text-muted-foreground'}`} />
+            {hasPassword ? (
+              <Badge variant="default" className="gap-1 bg-green-600 text-xs px-1.5 py-0">
+                <Check className="h-3 w-3" />Đã tạo
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="gap-1 text-xs px-1.5 py-0">
+                <X className="h-3 w-3" />Chưa tạo
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Hint click */}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground/60 justify-center pt-1">
+          <FileText className="h-3 w-3" />
+          <span>Click để xem đầy đủ thông tin</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export function KhachThueDataTable(props: KhachThueDataTableProps) {
-  const { data: initialData, searchTerm, onSearchChange, selectedTrangThai, onTrangThaiChange, ...tableProps } = props
-  const [data, setData] = React.useState(() => initialData)
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  )
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  })
-  
-  // Sync data when prop changes
+  const {
+    data: initialData,
+    searchTerm,
+    onSearchChange,
+    selectedTrangThai,
+    onTrangThaiChange,
+    onView,
+    onEdit,
+    onDelete,
+    actionLoading,
+  } = props
+
+  const [pageIndex, setPageIndex] = React.useState(0)
+  const [pageSize, setPageSize] = React.useState(12)
+  const [selectedKhachThue, setSelectedKhachThue] = React.useState<KhachThue | null>(null)
+
   React.useEffect(() => {
-    setData(initialData)
-  }, [initialData])
-  
-  const columns = React.useMemo(() => createColumns(tableProps), [tableProps])
-  
-  const sortableId = React.useId()
-  const sensors = useSensors(
-    useSensor(MouseSensor, {}),
-    useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {})
-  )
+    setPageIndex(0)
+  }, [searchTerm, selectedTrangThai])
 
-  const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
-    [data]
-  )
-
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-      pagination,
-    },
-    getRowId: (row) => row._id!,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (active && over && active.id !== over.id) {
-      setData((data) => {
-        const oldIndex = dataIds.indexOf(active.id)
-        const newIndex = dataIds.indexOf(over.id)
-        return arrayMove(data, oldIndex, newIndex)
-      })
-    }
-  }
-
-  const selectedCount = table.getFilteredSelectedRowModel().rows.length
+  const pageCount = Math.max(1, Math.ceil(initialData.length / pageSize))
+  const paginatedData = initialData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
+  const canPrev = pageIndex > 0
+  const canNext = pageIndex < pageCount - 1
 
   return (
     <div className="w-full space-y-4">
+      {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        {/* Tìm kiếm và Bộ lọc bên trái */}
         <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
           <div className="flex-1 sm:max-w-md">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Tìm kiếm theo tên, SĐT, CCCD..."
                 value={searchTerm || ''}
@@ -489,178 +492,78 @@ export function KhachThueDataTable(props: KhachThueDataTableProps) {
             </SelectContent>
           </Select>
         </div>
-        
-        {/* Tùy chỉnh cột bên phải */}
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns className="mr-2 h-4 w-4" />
-                <span className="hidden lg:inline">Tùy chỉnh cột</span>
-                <span className="lg:hidden">Cột</span>
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
-      
-      <div className="overflow-hidden rounded-lg border">
-        <DndContext
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={handleDragEnd}
-          sensors={sensors}
-          id={sortableId}
-        >
-          <Table>
-            <TableHeader className="bg-muted sticky top-0 z-10">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    )
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody className="**:data-[slot=table-cell]:first:w-8">
-              {table.getRowModel().rows?.length ? (
-                <SortableContext
-                  items={dataIds}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {table.getRowModel().rows.map((row) => (
-                    <DraggableRow key={row.id} row={row} />
-                  ))}
-                </SortableContext>
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    Không có dữ liệu
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </DndContext>
-      </div>
-      
-      <div className="flex items-center justify-between px-4">
-        <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-          {selectedCount > 0 ? (
-            <>Đã chọn {selectedCount} trong {table.getFilteredRowModel().rows.length} hàng</>
-          ) : (
-            <>Hiển thị {table.getFilteredRowModel().rows.length} hàng</>
-          )}
+
+      {/* Grid */}
+      {paginatedData.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {paginatedData.map((kt) => (
+            <KhachThueCard
+              key={kt._id}
+              khachThue={kt}
+              onCardClick={setSelectedKhachThue}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              actionLoading={actionLoading}
+            />
+          ))}
         </div>
-        <div className="flex w-full items-center gap-8 lg:w-fit">
+      ) : (
+        <div className="flex h-40 items-center justify-center rounded-lg border text-muted-foreground text-sm">
+          Không có dữ liệu
+        </div>
+      )}
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between px-1">
+        <div className="text-muted-foreground text-sm hidden lg:block">
+          Hiển thị {paginatedData.length} / {initialData.length} khách thuê
+        </div>
+        <div className="flex items-center gap-6 ml-auto">
           <div className="hidden items-center gap-2 lg:flex">
-            <Label htmlFor="rows-per-page" className="text-sm font-medium">
-              Số hàng mỗi trang
-            </Label>
+            <Label htmlFor="page-size" className="text-sm font-medium whitespace-nowrap">Mỗi trang</Label>
             <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value))
-              }}
+              value={`${pageSize}`}
+              onValueChange={(v) => { setPageSize(Number(v)); setPageIndex(0) }}
             >
-              <SelectTrigger size="sm" className="w-20" id="rows-per-page">
-                <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
-                />
+              <SelectTrigger size="sm" className="w-20" id="page-size">
+                <SelectValue placeholder={pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
+                {[8, 12, 20, 40].map((s) => (
+                  <SelectItem key={s} value={`${s}`}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
-            Trang {table.getState().pagination.pageIndex + 1} /{" "}
-            {table.getPageCount()}
-          </div>
-          <div className="ml-auto flex items-center gap-2 lg:ml-0">
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Trang đầu</span>
+          <div className="text-sm font-medium">Trang {pageIndex + 1} / {pageCount}</div>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="hidden h-8 w-8 lg:flex" onClick={() => setPageIndex(0)} disabled={!canPrev}>
               <ChevronsLeft className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              className="size-8"
-              size="icon"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Trang trước</span>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPageIndex(i => i - 1)} disabled={!canPrev}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              className="size-8"
-              size="icon"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Trang sau</span>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPageIndex(i => i + 1)} disabled={!canNext}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              className="hidden size-8 lg:flex"
-              size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Trang cuối</span>
+            <Button variant="outline" size="icon" className="hidden h-8 w-8 lg:flex" onClick={() => setPageIndex(pageCount - 1)} disabled={!canNext}>
               <ChevronsRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Modal chi tiết */}
+      <KhachThueDetailModal
+        khachThue={selectedKhachThue}
+        open={!!selectedKhachThue}
+        onClose={() => setSelectedKhachThue(null)}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        actionLoading={actionLoading}
+      />
     </div>
   )
 }
-

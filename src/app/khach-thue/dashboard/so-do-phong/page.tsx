@@ -229,7 +229,7 @@ export default function SoDoPhongKhachThuePage() {
             ))}
           </div>
         )}
-      </div>
+      </div> 
     </div>
   );
 }
