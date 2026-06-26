@@ -120,7 +120,7 @@ export default function KhachThuePage() {
 
   const filteredKhachThue = khachThueList.filter(khachThue =>
     khachThue.hoTen.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    khachThue.soDienThoai.includes(searchTerm) ||
+   (khachThue.soDienThoai?.includes(searchTerm) ?? false) ||
     khachThue.cccd.includes(searchTerm) ||
     khachThue.queQuan.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -558,11 +558,13 @@ function KhachThueForm({
       const url = khachThue ? `/api/khach-thue/${khachThue._id}` : '/api/khach-thue';
       const method = khachThue ? 'PUT' : 'POST';
 
-      // Chỉ gửi matKhau khi nó được nhập
-      const submitData = { ...formData };
-      if (!submitData.matKhau || submitData.matKhau.trim() === '') {
-        delete (submitData as any).matKhau;
-      }
+   const submitData = { ...formData };
+if (!submitData.matKhau || submitData.matKhau.trim() === '') {
+  delete (submitData as any).matKhau;
+}
+if (!submitData.email || submitData.email.trim() === '') {
+  (submitData as any).email = undefined;
+}
 
       const response = await fetch(url, {
         method,

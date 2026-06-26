@@ -14,7 +14,7 @@ const khachThueSchema = z.object({
   hoTen: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
   soDienThoai: z.union([z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'), z.literal(''), z.undefined()]),
   email: z.union([z.string().email('Email không hợp lệ'), z.literal(''), z.undefined()]),
-  cccd: z.string().regex(/^[0-9]{12}$/, 'CCCD phải có 12 chữ số'),
+  cccd: z.string().regex(/^[0-9]{11,12}$/, 'CCCD phải có 11 hoặc 12 chữ số'),
   ngaySinh: z.string().min(1, 'Ngày sinh là bắt buộc'),
   gioiTinh: z.enum(['nam', 'nu', 'khac']),
   queQuan: z.string().min(1, 'Quê quán là bắt buộc'),

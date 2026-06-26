@@ -167,7 +167,7 @@ function DragHandle({ id }: { id: string }) {
   )
 }
 
-// ─── Columns (unchanged) ─────────────────────────────────────────────────────
+// ─── Columns ─────────────────────────────────────────────────────────────────
 
 const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
   {
@@ -320,7 +320,7 @@ function DraggableRow({ row }: { row: Row<Phong> }) {
   )
 }
 
-// ─── Detail Modal ────────────────────────────────────────────────────────────
+// ─── Detail Modal ─────────────────────────────────────────────────────────────
 
 function InfoRow({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) {
   return (
@@ -359,11 +359,10 @@ function PhongDetailModal({
   const nguoiDaiDien = hopDong?.nguoiDaiDien
   const soLuong = hopDong?.khachThueId?.length || 0
   const imageCount = phong.anhPhong?.length || 0
-  const cfg = STATUS_CONFIG[phong.trangThai]
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
+      <DialogContent className="max-w-lg p-0 overflow-hidden gap-0 w-[calc(100vw-2rem)] sm:w-full">
         {/* Header stripe */}
         <div className={cn("h-1.5 w-full", {
           'bg-green-500': phong.trangThai === 'trong',
@@ -389,8 +388,7 @@ function PhongDetailModal({
         <Separator />
 
         {/* Body */}
-        <div className="px-6 py-1 max-h-[60vh] overflow-y-auto">
-          {/* Thông tin phòng */}
+        <div className="px-6 py-1 max-h-[55vh] overflow-y-auto">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-4 pb-1">Thông tin phòng</p>
           <InfoRow label="Diện tích" icon={<Ruler className="h-3.5 w-3.5" />} value={`${phong.dienTich} m²`} />
           <Separator className="opacity-50" />
@@ -406,7 +404,6 @@ function PhongDetailModal({
             </>
           )}
 
-          {/* Tiện nghi */}
           {(phong as any).tienNghi?.length > 0 && (
             <>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-5 pb-2">Tiện nghi</p>
@@ -418,7 +415,6 @@ function PhongDetailModal({
             </>
           )}
 
-          {/* Người thuê */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-5 pb-1">Người thuê</p>
           {hasNguoiThue ? (
             <div className="rounded-xl border bg-muted/20 p-3 mb-2">
@@ -454,7 +450,6 @@ function PhongDetailModal({
               <p className="text-xs text-muted-foreground">Chưa có người thuê</p>
             </div>
           )}
-
           <div className="pb-4" />
         </div>
 
@@ -491,7 +486,6 @@ function PhongCard({ row, tableProps, onCardClick }: { row: Row<Phong>; tablePro
   const nguoiDaiDien = hopDong?.nguoiDaiDien
   const soLuong = hopDong?.khachThueId?.length || 0
   const imageCount = item.anhPhong?.length || 0
-  const cfg = STATUS_CONFIG[item.trangThai]
 
   return (
     <div
@@ -640,7 +634,16 @@ export function PhongDataTable(props: PhongDataTableProps) {
 
   const columns = React.useMemo(() => createColumns(tableProps), [tableProps])
   const sortableId = React.useId()
-  const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}))
+  const sensors = useSensors(
+    useSensor(MouseSensor, {}),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {})
+  )
   const dataIds = React.useMemo<UniqueIdentifier[]>(() => data?.map(({ _id }) => _id!) || [], [data])
 
   const table = useReactTable({

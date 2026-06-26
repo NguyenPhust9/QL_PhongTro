@@ -58,7 +58,7 @@ const KhachThueSchema = new Schema<IKhachThue>({
     type: String,
     required: [true, 'CCCD là bắt buộc'],
     unique: true,
-    match: [/^[0-9]{12}$/, 'CCCD phải có 12 chữ số']
+match: [/^[0-9]{11,12}$/, 'CCCD phải có 11 hoặc 12 chữ số']
   },
   ngaySinh: {
     type: Date,

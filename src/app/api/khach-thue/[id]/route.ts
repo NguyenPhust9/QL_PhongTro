@@ -7,9 +7,9 @@ import { z } from 'zod';
 
 const khachThueSchema = z.object({
   hoTen: z.string().min(2, 'Họ tên phải có ít nhất 2 ký tự'),
-  soDienThoai: z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'),
-  email: z.string().email('Email không hợp lệ').optional(),
-  cccd: z.string().regex(/^[0-9]{12}$/, 'CCCD phải có 12 chữ số'),
+soDienThoai: z.union([z.string().regex(/^[0-9]{10,11}$/, 'Số điện thoại không hợp lệ'), z.literal(''), z.undefined()]),
+ email: z.union([z.string().email('Email không hợp lệ'), z.literal(''), z.undefined()]),
+cccd: z.string().regex(/^[0-9]{11,12}$/, 'CCCD phải có 11 hoặc 12 chữ số'),
   ngaySinh: z.string().min(1, 'Ngày sinh là bắt buộc'),
   gioiTinh: z.enum(['nam', 'nu', 'khac']),
   queQuan: z.string().min(1, 'Quê quán là bắt buộc'),
@@ -82,13 +82,14 @@ export async function PUT(
     const { id } = await params;
 
     // Check if phone or CCCD already exists (excluding current record)
-    const existingKhachThue = await KhachThue.findOne({
-      _id: { $ne: id },
-      $or: [
-        { soDienThoai: validatedData.soDienThoai },
-        { cccd: validatedData.cccd }
-      ]
-    });
+   const orConditions: any[] = [{ cccd: validatedData.cccd }];
+if (validatedData.soDienThoai) {
+  orConditions.push({ soDienThoai: validatedData.soDienThoai });
+}
+const existingKhachThue = await KhachThue.findOne({
+  _id: { $ne: id },
+  $or: orConditions
+});
 
     if (existingKhachThue) {
       return NextResponse.json(
