@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   Building2, RefreshCw, User, Zap, Droplets, Banknote, Shield, Users,
   Home, CheckCircle2, Clock, Wrench, XCircle, DoorOpen, CalendarDays,
-  Phone, Ruler, UserCheck, X
+  Phone, Ruler, UserCheck, X, ThermometerSnowflake, Wind
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +24,7 @@ interface Phong {
   giaThue: number;
   dienTich: number;
   soNguoiToiDa: number;
+  tienNghi: string[]; // dùng để kiểm tra điều hòa
   toaNha: {
     _id: string;
     tenToaNha: string;
@@ -54,6 +55,10 @@ interface ToaNha {
   _id: string;
   tenToaNha: string;
 }
+
+// Helper: kiểm tra phòng có điều hòa không
+const codieuHoa = (phong: Phong) =>
+  Array.isArray(phong.tienNghi) && phong.tienNghi.some((v) => v === 'dieuhoa' || v === 'Điều hòa')
 
 const TRANG_THAI_CONFIG = {
   trong: {
@@ -106,10 +111,13 @@ const TRANG_THAI_CONFIG = {
   },
 };
 
+type MayLanhFilter = 'all' | 'co' | 'khong';
+
 export default function SoDoPhongPage() {
   const [phongList, setPhongList] = useState<Phong[]>([]);
   const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
   const [selectedToaNha, setSelectedToaNha] = useState<string>('all');
+  const [mayLanhFilter, setMayLanhFilter] = useState<MayLanhFilter>('all');
   const [loading, setLoading] = useState(true);
   const [selectedPhong, setSelectedPhong] = useState<Phong | null>(null);
   const [hopDong, setHopDong] = useState<HopDong | null>(null);
@@ -171,9 +179,17 @@ export default function SoDoPhongPage() {
     setHopDong(null);
   };
 
-  const filteredPhong = phongList.filter((p) =>
-    selectedToaNha === 'all' ? true : p.toaNha?._id === selectedToaNha
-  );
+  // Lọc phòng theo tòa nhà + điều hòa (dùng tienNghi)
+  const filteredPhong = phongList.filter((p) => {
+    const matchToaNha = selectedToaNha === 'all' || p.toaNha?._id === selectedToaNha;
+    const matchMayLanh =
+      mayLanhFilter === 'all'
+        ? true
+        : mayLanhFilter === 'co'
+        ? codieuHoa(p)
+        : !codieuHoa(p);
+    return matchToaNha && matchMayLanh;
+  });
 
   const phongTheoTang = filteredPhong.reduce((acc, phong) => {
     const tang = phong.tang;
@@ -190,6 +206,8 @@ export default function SoDoPhongPage() {
     dangThue: filteredPhong.filter((p) => p.trangThai === 'dangThue').length,
     daDat: filteredPhong.filter((p) => p.trangThai === 'daDat').length,
     baoTri: filteredPhong.filter((p) => p.trangThai === 'baoTri').length,
+    coMayLanh: filteredPhong.filter(codieuHoa).length,
+    khongMayLanh: filteredPhong.filter((p) => !codieuHoa(p)).length,
   };
 
   if (loading) {
@@ -221,7 +239,7 @@ export default function SoDoPhongPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
@@ -231,6 +249,20 @@ export default function SoDoPhongPage() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Tải mới
           </Button>
+
+          {/* Filter điều hòa */}
+          <Select value={mayLanhFilter} onValueChange={(v) => setMayLanhFilter(v as MayLanhFilter)}>
+            <SelectTrigger className="w-48 border-slate-300 font-medium">
+              <ThermometerSnowflake className="h-4 w-4 mr-2 text-cyan-500" />
+              <SelectValue placeholder="Điều hòa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả phòng</SelectItem>
+              <SelectItem value="co">Có điều hòa</SelectItem>
+              <SelectItem value="khong">Không có điều hòa</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={selectedToaNha} onValueChange={setSelectedToaNha}>
             <SelectTrigger className="w-48 border-slate-300 font-medium">
               <Building2 className="h-4 w-4 mr-2 text-slate-500" />
@@ -246,15 +278,12 @@ export default function SoDoPhongPage() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats trạng thái */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(Object.entries(TRANG_THAI_CONFIG) as [keyof typeof TRANG_THAI_CONFIG, typeof TRANG_THAI_CONFIG[keyof typeof TRANG_THAI_CONFIG]][]).map(([key, config]) => {
           const Icon = config.icon;
           return (
-            <div
-              key={key}
-              className={`rounded-xl border-2 p-4 ${config.statBg} ${config.statBorder} shadow-sm`}
-            >
+            <div key={key} className={`rounded-xl border-2 p-4 ${config.statBg} ${config.statBorder} shadow-sm`}>
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-xs font-bold uppercase tracking-wider ${config.statText} opacity-80`}>
                   {config.label}
@@ -264,12 +293,34 @@ export default function SoDoPhongPage() {
               <p className={`text-3xl font-black ${config.statText}`}>
                 {stats[key as keyof typeof stats]}
               </p>
-              <p className={`text-xs mt-1 ${config.statText} opacity-60`}>
-                / {stats.total} phòng
-              </p>
+              <p className={`text-xs mt-1 ${config.statText} opacity-60`}>/ {stats.total} phòng</p>
             </div>
           );
         })}
+      </div>
+
+      {/* Stats điều hòa */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl border-2 p-4 bg-cyan-50 border-cyan-200 shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-cyan-400 flex items-center justify-center shrink-0">
+            <ThermometerSnowflake className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-cyan-700">Có điều hòa</p>
+            <p className="text-3xl font-black text-cyan-800">{stats.coMayLanh}</p>
+            <p className="text-xs text-cyan-600 opacity-60">/ {stats.total} phòng</p>
+          </div>
+        </div>
+        <div className="rounded-xl border-2 p-4 bg-slate-50 border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-slate-400 flex items-center justify-center shrink-0">
+            <Wind className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-600">Không có điều hòa</p>
+            <p className="text-3xl font-black text-slate-700">{stats.khongMayLanh}</p>
+            <p className="text-xs text-slate-500 opacity-60">/ {stats.total} phòng</p>
+          </div>
+        </div>
       </div>
 
       {/* Sơ đồ */}
@@ -296,6 +347,7 @@ export default function SoDoPhongPage() {
                       const config = TRANG_THAI_CONFIG[phong.trangThai];
                       const isSelected = selectedPhong?._id === phong._id;
                       const Icon = config.icon;
+                      const hasAC = codieuHoa(phong);
                       return (
                         <button
                           key={phong._id}
@@ -312,6 +364,16 @@ export default function SoDoPhongPage() {
                           <Icon className="h-4 w-4 opacity-80" />
                           <span className="text-sm font-black leading-none">{phong.maPhong}</span>
                           <span className="text-[9px] font-semibold opacity-80 leading-none">{config.label}</span>
+
+                          {/* Badge điều hòa */}
+                          {hasAC && (
+                            <span
+                              className="absolute top-1 right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center shadow"
+                              title="Có điều hòa"
+                            >
+                              <ThermometerSnowflake className="h-2.5 w-2.5 text-cyan-500" />
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -320,6 +382,14 @@ export default function SoDoPhongPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Chú thích */}
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <span className="w-4 h-4 bg-white border border-slate-300 rounded-full flex items-center justify-center shadow-sm">
+          <ThermometerSnowflake className="h-2.5 w-2.5 text-cyan-500" />
+        </span>
+        <span>= Phòng có điều hòa</span>
       </div>
 
       {/* Overlay */}
@@ -395,9 +465,7 @@ export default function SoDoPhongPage() {
                       <Ruler className="h-3 w-3 text-slate-500" />
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Diện tích</p>
                     </div>
-                    <p className="text-sm font-extrabold text-slate-800">
-                      {selectedPhong.dienTich} m²
-                    </p>
+                    <p className="text-sm font-extrabold text-slate-800">{selectedPhong.dienTich} m²</p>
                   </div>
 
                   <div className="bg-white rounded-xl p-3 border-2 border-slate-200 shadow-sm">
@@ -405,14 +473,59 @@ export default function SoDoPhongPage() {
                       <Users className="h-3 w-3 text-slate-500" />
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Sức chứa</p>
                     </div>
-                    <p className="text-sm font-extrabold text-slate-800">
-                      {selectedPhong.soNguoiToiDa} người
-                    </p>
+                    <p className="text-sm font-extrabold text-slate-800">{selectedPhong.soNguoiToiDa} người</p>
                   </div>
                 </div>
               </div>
 
-              {/* Thông tin hợp đồng */}
+              {/* Tiện nghi + Điều hòa nổi bật */}
+              {selectedPhong.tienNghi && selectedPhong.tienNghi.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tiện nghi</p>
+
+                  {/* Điều hòa nổi bật */}
+                  <div className={`rounded-xl border-2 p-3 mb-2 flex items-center gap-3 ${
+                    codieuHoa(selectedPhong)
+                      ? 'bg-cyan-50 border-cyan-200'
+                      : 'bg-slate-100 border-slate-200'
+                  }`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      codieuHoa(selectedPhong) ? 'bg-cyan-400' : 'bg-slate-300'
+                    }`}>
+                      <ThermometerSnowflake className={`h-4 w-4 ${codieuHoa(selectedPhong) ? 'text-white' : 'text-slate-500'}`} />
+                    </div>
+                    <div>
+                      <p className={`text-sm font-extrabold ${codieuHoa(selectedPhong) ? 'text-cyan-800' : 'text-slate-500'}`}>
+                        {codieuHoa(selectedPhong) ? 'Có điều hòa' : 'Không có điều hòa'}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {codieuHoa(selectedPhong)
+                          ? 'Phòng được trang bị điều hòa nhiệt độ'
+                          : 'Phòng chưa có điều hòa nhiệt độ'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tất cả tiện nghi dưới dạng tags */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedPhong.tienNghi.map((tn) => (
+                      <span
+                        key={tn}
+                        className={`text-xs px-2.5 py-1 rounded-lg font-semibold border ${
+                          tn === 'dieuhoa' || tn === 'Điều hòa'
+                          ? 'bg-cyan-100 border-cyan-300 text-cyan-700'
+                            : 'bg-slate-100 border-slate-200 text-slate-600'
+                        }`}
+                      >
+                                                {tn === 'dieuhoa' ? 'Điều hòa' : tn}
+
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hợp đồng hiện tại */}
               {(selectedPhong.trangThai === 'dangThue' || selectedPhong.trangThai === 'daDat') && (
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hợp đồng hiện tại</p>
