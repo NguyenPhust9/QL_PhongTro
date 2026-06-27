@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   Building2, RefreshCw, User, Zap, Droplets, Banknote, Shield, Users,
   Home, CheckCircle2, Clock, Wrench, XCircle, DoorOpen, CalendarDays,
-  Phone, Ruler, UserCheck, X, ThermometerSnowflake, Wind
+  Phone, Ruler, UserCheck, X, ThermometerSnowflake, Wind, Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,7 +58,7 @@ interface ToaNha {
 
 // Helper: kiểm tra phòng có điều hòa không
 const codieuHoa = (phong: Phong) =>
-  Array.isArray(phong.tienNghi) && phong.tienNghi.some((v) => v === 'dieuhoa' || v === 'Điều hòa')
+  Array.isArray(phong.tienNghi) && phong.tienNghi.some((v) => v === 'dieuhoa' || v === 'Điều hòa');
 
 const TRANG_THAI_CONFIG = {
   trong: {
@@ -70,6 +70,9 @@ const TRANG_THAI_CONFIG = {
     statBg: 'bg-emerald-100',
     statText: 'text-emerald-800',
     statBorder: 'border-emerald-300',
+    badgeBg: 'bg-emerald-100',
+    badgeText: 'text-emerald-700',
+    badgeBorder: 'border-emerald-300',
     icon: CheckCircle2,
     drawerBg: 'bg-emerald-400',
   },
@@ -82,6 +85,9 @@ const TRANG_THAI_CONFIG = {
     statBg: 'bg-blue-100',
     statText: 'text-blue-800',
     statBorder: 'border-blue-300',
+    badgeBg: 'bg-blue-100',
+    badgeText: 'text-blue-700',
+    badgeBorder: 'border-blue-300',
     icon: Home,
     drawerBg: 'bg-blue-400',
   },
@@ -94,6 +100,9 @@ const TRANG_THAI_CONFIG = {
     statBg: 'bg-amber-100',
     statText: 'text-amber-800',
     statBorder: 'border-amber-300',
+    badgeBg: 'bg-amber-100',
+    badgeText: 'text-amber-700',
+    badgeBorder: 'border-amber-300',
     icon: Clock,
     drawerBg: 'bg-amber-400',
   },
@@ -106,6 +115,9 @@ const TRANG_THAI_CONFIG = {
     statBg: 'bg-rose-100',
     statText: 'text-rose-800',
     statBorder: 'border-rose-300',
+    badgeBg: 'bg-rose-100',
+    badgeText: 'text-rose-700',
+    badgeBorder: 'border-rose-300',
     icon: Wrench,
     drawerBg: 'bg-rose-400',
   },
@@ -191,14 +203,30 @@ export default function SoDoPhongPage() {
     return matchToaNha && matchMayLanh;
   });
 
-  const phongTheoTang = filteredPhong.reduce((acc, phong) => {
-    const tang = phong.tang;
-    if (!acc[tang]) acc[tang] = [];
-    acc[tang].push(phong);
+  // === GOM NHÓM THEO TÒA NHÀ (rồi tới tầng) ===
+  const phongTheoToaNha = filteredPhong.reduce((acc, phong) => {
+    const toaId = phong.toaNha?._id || 'unknown';
+    if (!acc[toaId]) {
+      acc[toaId] = {
+        tenToaNha: phong.toaNha?.tenToaNha || 'Chưa rõ tòa',
+        tangMap: {} as Record<number, Phong[]>,
+      };
+    }
+    if (!acc[toaId].tangMap[phong.tang]) acc[toaId].tangMap[phong.tang] = [];
+    acc[toaId].tangMap[phong.tang].push(phong);
     return acc;
-  }, {} as Record<number, Phong[]>);
+  }, {} as Record<string, { tenToaNha: string; tangMap: Record<number, Phong[]> }>);
 
-  const tangList = Object.keys(phongTheoTang).map(Number).sort((a, b) => b - a);
+  // Thứ tự tòa nhà: theo danh sách tòa (dropdown), tòa lạ xếp cuối
+  const toaNhaOrder = toaNhaList.map((t) => t._id);
+  const orderedToaNhaIds = Object.keys(phongTheoToaNha).sort((a, b) => {
+    const ia = toaNhaOrder.indexOf(a);
+    const ib = toaNhaOrder.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
 
   const stats = {
     total: filteredPhong.length,
@@ -235,7 +263,7 @@ export default function SoDoPhongPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Sơ đồ phòng</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Tổng quan trạng thái các phòng theo tầng
+              Tổng quan trạng thái các phòng theo từng tòa nhà
             </p>
           </div>
         </div>
@@ -323,66 +351,118 @@ export default function SoDoPhongPage() {
         </div>
       </div>
 
-      {/* Sơ đồ */}
-      <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm">
-        {tangList.length === 0 ? (
-          <div className="p-12 text-center">
-            <DoorOpen className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 font-medium">Không có phòng nào</p>
-          </div>
-        ) : (
-          <div className="divide-y-2 divide-slate-100">
-            {tangList.map((tang) => (
-              <div key={tang} className="flex">
-                <div className="w-16 shrink-0 flex items-center justify-center bg-slate-200 border-r-2 border-slate-300 py-4">
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">T</p>
-                    <p className="text-xl font-black text-slate-700">{tang}</p>
-                  </div>
-                </div>
-                <div className="flex-1 p-4 flex flex-wrap gap-3 bg-slate-50">
-                  {phongTheoTang[tang]
-                    .sort((a, b) => a.maPhong.localeCompare(b.maPhong))
-                    .map((phong) => {
-                      const config = TRANG_THAI_CONFIG[phong.trangThai];
-                      const isSelected = selectedPhong?._id === phong._id;
-                      const Icon = config.icon;
-                      const hasAC = codieuHoa(phong);
-                      return (
-                        <button
-                          key={phong._id}
-                          onClick={() => handleSelectPhong(phong)}
-                          className={`
-                            relative w-20 h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-1
-                            transition-all duration-150 cursor-pointer shadow-sm
-                            ${config.bg} ${config.border} ${config.text}
-                            ${isSelected
-                              ? 'ring-4 ring-offset-2 ring-slate-700 scale-110 shadow-lg'
-                              : 'hover:scale-105 hover:shadow-md opacity-90 hover:opacity-100'}
-                          `}
-                        >
-                          <Icon className="h-4 w-4 opacity-80" />
-                          <span className="text-sm font-black leading-none">{phong.maPhong}</span>
-                          <span className="text-[9px] font-semibold opacity-80 leading-none">{config.label}</span>
+      {/* Sơ đồ — GOM THEO TÒA NHÀ, các tòa xếp dọc */}
+      {orderedToaNhaIds.length === 0 ? (
+        <div className="bg-white rounded-xl border-2 border-slate-200 p-12 text-center shadow-sm">
+          <DoorOpen className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">Không có phòng nào</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {orderedToaNhaIds.map((toaId) => {
+            const { tenToaNha, tangMap } = phongTheoToaNha[toaId];
+            const tangs = Object.keys(tangMap).map(Number).sort((a, b) => b - a);
+            const roomsInToa = tangs.flatMap((t) => tangMap[t]);
+            const toaStats = {
+              total: roomsInToa.length,
+              trong: roomsInToa.filter((p) => p.trangThai === 'trong').length,
+              dangThue: roomsInToa.filter((p) => p.trangThai === 'dangThue').length,
+              daDat: roomsInToa.filter((p) => p.trangThai === 'daDat').length,
+              baoTri: roomsInToa.filter((p) => p.trangThai === 'baoTri').length,
+            };
 
-                          {/* Badge điều hòa */}
-                          {hasAC && (
-                            <span
-                              className="absolute top-1 right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center shadow"
-                              title="Có điều hòa"
-                            >
-                              <ThermometerSnowflake className="h-2.5 w-2.5 text-cyan-500" />
-                            </span>
-                          )}
-                        </button>
+            return (
+              <div
+                key={toaId}
+                className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-sm"
+              >
+                {/* Header tòa nhà */}
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 bg-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center border border-white/20 shrink-0">
+                      <Building2 className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-black text-white leading-tight">{tenToaNha}</h2>
+                      <p className="text-[11px] text-slate-300 flex items-center gap-1 mt-0.5">
+                        <Layers className="h-3 w-3" />
+                        {toaStats.total} phòng · {tangs.length} tầng
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Mini badges trạng thái của tòa */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(['trong', 'dangThue', 'daDat', 'baoTri'] as const).map((k) => {
+                      const config = TRANG_THAI_CONFIG[k];
+                      return (
+                        <span
+                          key={k}
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${config.badgeBg} ${config.badgeText} ${config.badgeBorder}`}
+                        >
+                          {config.label} {toaStats[k]}
+                        </span>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* Các tầng trong tòa (từ cao xuống thấp) */}
+                <div className="divide-y-2 divide-slate-100">
+                  {tangs.map((tang) => (
+                    <div key={tang} className="flex">
+                      <div className="w-16 shrink-0 flex items-center justify-center bg-slate-200 border-r-2 border-slate-300 py-4">
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">T</p>
+                          <p className="text-xl font-black text-slate-700">{tang}</p>
+                        </div>
+                      </div>
+                      <div className="flex-1 p-4 flex flex-wrap gap-3 bg-slate-50">
+                        {tangMap[tang]
+                          .sort((a, b) => a.maPhong.localeCompare(b.maPhong))
+                          .map((phong) => {
+                            const config = TRANG_THAI_CONFIG[phong.trangThai];
+                            const isSelected = selectedPhong?._id === phong._id;
+                            const Icon = config.icon;
+                            const hasAC = codieuHoa(phong);
+                            return (
+                              <button
+                                key={phong._id}
+                                onClick={() => handleSelectPhong(phong)}
+                                className={`
+                                  relative w-20 h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-1
+                                  transition-all duration-150 cursor-pointer shadow-sm
+                                  ${config.bg} ${config.border} ${config.text}
+                                  ${isSelected
+                                    ? 'ring-4 ring-offset-2 ring-slate-700 scale-110 shadow-lg'
+                                    : 'hover:scale-105 hover:shadow-md opacity-90 hover:opacity-100'}
+                                `}
+                              >
+                                <Icon className="h-4 w-4 opacity-80" />
+                                <span className="text-sm font-black leading-none">{phong.maPhong}</span>
+                                <span className="text-[9px] font-semibold opacity-80 leading-none">{config.label}</span>
+
+                                {/* Badge điều hòa */}
+                                {hasAC && (
+                                  <span
+                                    className="absolute top-1 right-1 w-4 h-4 bg-white/90 rounded-full flex items-center justify-center shadow"
+                                    title="Có điều hòa"
+                                  >
+                                    <ThermometerSnowflake className="h-2.5 w-2.5 text-cyan-500" />
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Chú thích */}
       <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -513,12 +593,11 @@ export default function SoDoPhongPage() {
                         key={tn}
                         className={`text-xs px-2.5 py-1 rounded-lg font-semibold border ${
                           tn === 'dieuhoa' || tn === 'Điều hòa'
-                          ? 'bg-cyan-100 border-cyan-300 text-cyan-700'
+                            ? 'bg-cyan-100 border-cyan-300 text-cyan-700'
                             : 'bg-slate-100 border-slate-200 text-slate-600'
                         }`}
                       >
-                                                {tn === 'dieuhoa' ? 'Điều hòa' : tn}
-
+                        {tn === 'dieuhoa' ? 'Điều hòa' : tn}
                       </span>
                     ))}
                   </div>

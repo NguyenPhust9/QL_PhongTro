@@ -49,7 +49,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import type { HopDong, Phong, KhachThue, ToaNha } from '@/types'
 
-// ─── Helpers (giữ nguyên) ─────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
@@ -73,13 +73,6 @@ const getStatusBadge = (status: string) => {
     default:
       return <Badge className="gap-1 bg-gray-100 text-gray-700 border-0">{status}</Badge>
   }
-}
-
-const isExpiringSoon = (ngayKetThuc: Date | string) => {
-  const diffDays = Math.ceil(
-    (new Date(ngayKetThuc).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-  )
-  return diffDays <= 30 && diffDays > 0
 }
 
 const getPhongName = (phong: string | { maPhong: string }, phongList: Phong[]) => {
@@ -154,7 +147,11 @@ function HopDongDetailModal({
 } & HopDongTableProps) {
   if (!hopDong) return null
 
-  const expiring = isExpiringSoon(hopDong.ngayKetThuc)
+  const today = new Date()
+  const endDate = new Date(hopDong.ngayKetThuc)
+  const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const expiring = daysRemaining > 0 && daysRemaining <= 60
+
   const phongName = getPhongName(hopDong.phong, phongList)
   const toaNhaName = getToaNhaName(hopDong.phong, phongList, toaNhaList)
 
@@ -175,7 +172,7 @@ function HopDongDetailModal({
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-xs text-muted-foreground mb-0.5">{label}</div>
-        <div className={`text-sm font-medium break-words ${highlight ? 'text-orange-500' : ''}`}>
+        <div className={`text-sm font-medium break-words ${highlight ? 'text-red-500' : ''}`}>
           {value}
         </div>
       </div>
@@ -195,7 +192,7 @@ function HopDongDetailModal({
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {getStatusBadge(hopDong.trangThai)}
                 {expiring && (
-                  <span className="flex items-center gap-1 text-xs text-orange-500 font-medium">
+                  <span className="flex items-center gap-1 text-xs text-red-500 font-medium">
                     <BadgeAlert className="h-3 w-3" />Sắp hết hạn
                   </span>
                 )}
@@ -344,7 +341,15 @@ function HopDongCard({
   onView,
   actionLoading,
 }: { hopDong: HopDong; onCardClick: (h: HopDong) => void } & HopDongTableProps) {
-  const expiring = isExpiringSoon(hopDong.ngayKetThuc)
+  const today = new Date()
+  const endDate = new Date(hopDong.ngayKetThuc)
+  const startDate = new Date(hopDong.ngayBatDau)
+  const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+  const isExpiredNow = daysRemaining <= 0
+  const isWarning = daysRemaining > 0 && daysRemaining <= 60
+  const barPercent = isExpiredNow ? 0 : Math.min(100, Math.round((daysRemaining / totalDays) * 100))
+
   const phongName = getPhongName(hopDong.phong, phongList)
   const toaNhaName = getToaNhaName(hopDong.phong, phongList, toaNhaList)
   const khachThueName = getKhachThueName(hopDong.khachThueId[0], khachThueList)
@@ -352,7 +357,7 @@ function HopDongCard({
 
   const stripColor =
     hopDong.trangThai === 'hoatDong'
-      ? expiring ? 'bg-orange-400' : 'bg-green-500'
+      ? isWarning ? 'bg-red-400' : 'bg-green-500'
       : hopDong.trangThai === 'hetHan' ? 'bg-red-400' : 'bg-gray-300'
 
   return (
@@ -369,8 +374,8 @@ function HopDongCard({
             <div className="font-bold text-sm text-blue-600 leading-tight">
               {hopDong.maHopDong}
             </div>
-            {expiring && (
-              <div className="flex items-center gap-1 text-xs text-orange-500 font-medium mt-0.5">
+            {isWarning && (
+              <div className="flex items-center gap-1 text-xs text-red-500 font-medium mt-0.5">
                 <BadgeAlert className="h-3 w-3" />Sắp hết hạn
               </div>
             )}
@@ -420,6 +425,7 @@ function HopDongCard({
 
         <div className="border-t" />
 
+        {/* Phòng & khách thuê */}
         <div className="grid gap-1.5 text-xs">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="h-3.5 w-3.5 shrink-0" />
@@ -436,23 +442,43 @@ function HopDongCard({
 
         <div className="border-t" />
 
-        <div className="grid gap-1.5 text-xs">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />Bắt đầu</span>
-            <span className="font-medium text-foreground">
-              {new Date(hopDong.ngayBatDau).toLocaleDateString('vi-VN')}
+        {/* Số ngày còn lại */}
+        <div className={`rounded-lg px-3 py-2 text-xs space-y-1.5 ${
+          isExpiredNow
+            ? 'bg-gray-100'
+            : isWarning
+            ? 'bg-red-50 border border-red-200'
+            : 'bg-green-50 border border-green-200'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className={`flex items-center gap-1.5 font-medium ${
+              isExpiredNow ? 'text-gray-500' : isWarning ? 'text-red-600' : 'text-green-700'
+            }`}>
+              <Clock className="h-3.5 w-3.5" />
+              {isExpiredNow
+                ? `Hết hạn ${Math.abs(daysRemaining)} ngày trước`
+                : 'Còn lại'}
             </span>
+            {!isExpiredNow && (
+              <span className={`font-bold text-sm ${isWarning ? 'text-red-700' : 'text-green-700'}`}>
+                {daysRemaining}{' '}
+                <span className="font-normal text-xs text-muted-foreground">/ {totalDays} ngày</span>
+              </span>
+            )}
           </div>
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />Kết thúc</span>
-            <span className={`font-medium ${expiring ? 'text-orange-500' : 'text-foreground'}`}>
-              {new Date(hopDong.ngayKetThuc).toLocaleDateString('vi-VN')}
-            </span>
+          <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${
+                isExpiredNow ? 'w-0' : isWarning ? 'bg-red-400' : 'bg-green-400'
+              }`}
+              style={{ width: `${barPercent}%` }}
+            />
           </div>
         </div>
 
         <div className="border-t" />
 
+        {/* Giá thuê */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Giá thuê / tháng</span>
           <span className="text-sm font-bold text-blue-600">{formatCurrency(hopDong.giaThue)}</span>

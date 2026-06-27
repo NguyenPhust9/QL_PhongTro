@@ -22,7 +22,6 @@ const PhongSchema = new Schema<IPhong>({
   maPhong: {
     type: String,
     required: [true, 'Mã phòng là bắt buộc'],
-    unique: true,
     trim: true,
     uppercase: true,
     match: [/^[A-Z0-9]+$/, 'Mã phòng chỉ được chứa chữ cái và số']
@@ -90,6 +89,7 @@ const PhongSchema = new Schema<IPhong>({
 
 // Index cho tìm kiếm
 // maPhong đã có unique: true nên không cần index thủ công
+PhongSchema.index({ maPhong: 1, toaNha: 1 }, { unique: true }); // unique trong cùng tòa nhà
 PhongSchema.index({ toaNha: 1 });
 PhongSchema.index({ trangThai: 1 });
 PhongSchema.index({ giaThue: 1 });

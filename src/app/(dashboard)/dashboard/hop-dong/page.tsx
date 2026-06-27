@@ -1354,17 +1354,41 @@ export default function HopDongPage() {
                     </div>
                   </div>
 
-                  {/* Contract dates */}
-                  <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 border-t pt-3">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                      <span>Từ: {new Date(hopDong.ngayBatDau).toLocaleDateString('vi-VN')}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                      <span>Đến: {new Date(hopDong.ngayKetThuc).toLocaleDateString('vi-VN')}</span>
-                    </div>
-                  </div>
+                 {/* Contract days remaining */}
+{(() => {
+  const today = new Date();
+  const endDate = new Date(hopDong.ngayKetThuc);
+  const startDate = new Date(hopDong.ngayBatDau);
+  const diffTime = endDate.getTime() - today.getTime();
+  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const isNearExpiry = daysRemaining <= 60 && daysRemaining > 0;
+  const isExpiredCard = daysRemaining <= 0;
+
+  return (
+    <div className={`border-t pt-3 flex items-center gap-2 text-xs rounded-lg px-3 py-2 mt-1 ${
+      isExpiredCard
+        ? 'bg-gray-100 text-gray-500'
+        : isNearExpiry
+        ? 'bg-red-50 text-red-700 border border-red-200'
+        : 'bg-green-50 text-green-700 border border-green-200'
+    }`}>
+      <Calendar className={`h-3.5 w-3.5 flex-shrink-0 ${
+        isExpiredCard ? 'text-gray-400' : isNearExpiry ? 'text-red-500' : 'text-green-500'
+      }`} />
+      {isExpiredCard ? (
+        <span className="font-medium">Đã hết hạn {Math.abs(daysRemaining)} ngày trước</span>
+      ) : (
+        <span className="font-medium">
+          Còn <span className={`font-bold text-sm ${isNearExpiry ? 'text-red-700' : 'text-green-700'}`}>
+            {daysRemaining}
+          </span> ngày
+          <span className="text-gray-400 font-normal ml-1">/ {totalDays} ngày</span>
+        </span>
+      )}
+    </div>
+  );
+})()}
 
                   {/* Pricing info */}
                   <div className="border-t pt-3 grid grid-cols-2 gap-3">

@@ -99,25 +99,26 @@ export default function SuCoPage() {
       }
       
       // Fetch sự cố từ API
-      const suCoResponse = await fetch('/api/su-co');
+      const suCoResponse = await fetch('/api/su-co?limit=1000');
       const suCoData = await suCoResponse.json();
       const suCos = suCoData.success ? suCoData.data : [];
       setSuCoList(suCos);
 
-      // Fetch phòng từ API
-      const phongResponse = await fetch('/api/phong');
+      // FIX 1: thêm limit=1000 — /api/phong embed sẵn hopDongHienTai.nguoiDaiDien
+      // nên không cần fetch /api/hop-dong nữa để tra cứu khách thuê
+      const phongResponse = await fetch('/api/phong?limit=1000');
       const phongData = await phongResponse.json();
       const phongs = phongData.success ? phongData.data : [];
       setPhongList(phongs);
 
       // Fetch khách thuê từ API
-      const khachThueResponse = await fetch('/api/khach-thue');
+      const khachThueResponse = await fetch('/api/khach-thue?limit=1000');
       const khachThueData = await khachThueResponse.json();
       const khachThues = khachThueData.success ? khachThueData.data : [];
       setKhachThueList(khachThues);
 
-      // Fetch hợp đồng từ API
-      const hopDongResponse = await fetch('/api/hop-dong');
+      // Fetch hợp đồng từ API (giữ lại cho các nơi khác dùng)
+      const hopDongResponse = await fetch('/api/hop-dong?limit=1000');
       const hopDongData = await hopDongResponse.json();
       const hopDongs = hopDongData.success ? hopDongData.data : [];
       setHopDongList(hopDongs);
@@ -485,7 +486,9 @@ export default function SuCoPage() {
         <div className="space-y-3">
           {filteredSuCo.map((suCo) => {
             const phongInfo = typeof suCo.phong === 'object' ? suCo.phong : phongList.find(p => p._id === suCo.phong);
-            const khachThueInfo = typeof suCo.nguoiBaoCao === 'object' ? suCo.nguoiBaoCao : khachThueList.find(k => k._id === suCo.nguoiBaoCao);
+            const khachThueInfo = typeof (suCo.khachThue as any) === 'object'
+              ? (suCo.khachThue as any)
+              : khachThueList.find(k => k._id === suCo.khachThue);
             
             return (
               <Card key={suCo._id} className="p-4">
@@ -585,9 +588,16 @@ function SuCoForm({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  // FIX 2: extract _id nếu phong/khachThue là object (trường hợp edit)
+  const getIdFromField = (field: any): string => {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
+    return field._id || '';
+  };
+
   const [formData, setFormData] = useState({
-    phong: suCo?.phong || '',
-    khachThue: suCo?.khachThue || '',
+    phong: getIdFromField(suCo?.phong),
+    khachThue: getIdFromField(suCo?.khachThue),
     tieuDe: suCo?.tieuDe || '',
     moTa: suCo?.moTa || '',
     loaiSuCo: suCo?.loaiSuCo || 'dienNuoc',
@@ -598,13 +608,25 @@ function SuCoForm({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedPhong, setSelectedPhong] = useState<any>(null);
   const [images, setImages] = useState<string[]>(suCo?.anhSuCo || []);
+
+  // FIX 3: khởi tạo selectedPhong từ phongList khi edit
+  const [selectedPhong, setSelectedPhong] = useState<any>(() => {
+    if (!suCo?.phong) return null;
+    const phongId = getIdFromField(suCo.phong);
+    return phongList.find(p => p._id === phongId) || null;
+  });
+
+  // FIX 4: state lưu tên khách thuê để hiển thị (không phụ thuộc vào khachThueList)
+  const [selectedKhachThueName, setSelectedKhachThueName] = useState<string>(() => {
+    if (!suCo?.khachThue) return '';
+    if (typeof suCo.khachThue === 'object') return (suCo.khachThue as any).hoTen || '';
+    return getKhachThueName(suCo.khachThue);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation: phải chọn phòng và có khách thuê
     if (!formData.phong) {
       toast.error('Vui lòng chọn phòng');
       return;
@@ -617,7 +639,6 @@ function SuCoForm({
     
     setIsSubmitting(true);
     try {
-      // Prepare data for API
       const submitData = {
         ...formData,
         anhSuCo: images,
@@ -629,9 +650,7 @@ function SuCoForm({
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
       });
 
@@ -652,27 +671,25 @@ function SuCoForm({
     }
   };
 
+  // FIX 5: dùng phong.hopDongHienTai thay vì tìm trong hopDongList
+  const handlePhongChange = (phongId: string) => {
+    // Reset khách thuê trước khi set phòng mới
+    setFormData(prev => ({ ...prev, phong: phongId, khachThue: '' }));
+    setSelectedKhachThueName('');
 
-  const handlePhongChange = async (phongId: string) => {
-    setFormData(prev => ({ ...prev, phong: phongId }));
-    
-    // Tìm thông tin phòng được chọn
     const phong = phongList.find(p => p._id === phongId);
-    setSelectedPhong(phong);
-    
-    if (phong) {
-      // Tìm hợp đồng đang hoạt động cho phòng này
-      const hopDongHoatDong = hopDongList.find(hd => 
-        hd.phong._id === phongId && hd.trangThai === 'hoatDong'
-      );
-      
-      if (hopDongHoatDong && hopDongHoatDong.nguoiDaiDien) {
-        // Lấy người đại diện làm khách thuê chính
-        setFormData(prev => ({ ...prev, khachThue: hopDongHoatDong.nguoiDaiDien._id || hopDongHoatDong.nguoiDaiDien }));
-      } else {
-        // Nếu không tìm thấy hợp đồng hoạt động, reset khách thuê
-        setFormData(prev => ({ ...prev, khachThue: '' }));
-      }
+    setSelectedPhong(phong || null);
+
+    if (!phong) return;
+
+    // /api/phong đã populate sẵn hopDongHienTai.nguoiDaiDien — dùng thẳng
+    const nguoiDaiDien = (phong as any)?.hopDongHienTai?.nguoiDaiDien;
+
+    if (nguoiDaiDien) {
+      const id = typeof nguoiDaiDien === 'string' ? nguoiDaiDien : nguoiDaiDien._id;
+      const hoTen = typeof nguoiDaiDien === 'object' ? nguoiDaiDien.hoTen : '';
+      setFormData(prev => ({ ...prev, khachThue: id || '' }));
+      setSelectedKhachThueName(hoTen || '');
     }
   };
 
@@ -700,7 +717,8 @@ function SuCoForm({
           {formData.khachThue ? (
             <div className="p-3 bg-gray-50 rounded-md border">
               <div className="text-sm font-medium">
-                {getKhachThueName(formData.khachThue)}
+                {/* FIX 6: dùng selectedKhachThueName thay vì tra trong khachThueList */}
+                {selectedKhachThueName || getKhachThueName(formData.khachThue)}
               </div>
               <div className="text-xs text-gray-500">
                 {selectedPhong && `Phòng ${selectedPhong.maPhong}`}
@@ -712,7 +730,9 @@ function SuCoForm({
           ) : (
             <div className="p-3 bg-yellow-50 rounded-md border border-yellow-200">
               <div className="text-sm text-yellow-800">
-                Vui lòng chọn phòng để tự động lấy thông tin khách thuê
+                {selectedPhong && !(selectedPhong as any)?.hopDongHienTai
+                  ? '⚠️ Phòng này chưa có hợp đồng hoạt động'
+                  : 'Vui lòng chọn phòng để tự động lấy thông tin khách thuê'}
               </div>
             </div>
           )}

@@ -1,5 +1,5 @@
 'use client';
-
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCache } from '@/hooks/use-cache';
@@ -38,7 +38,9 @@ import {
   Info,
   CreditCard,
   RefreshCw,
-  Copy
+  Copy,
+  MessageCircle, // ← thêm dòng này
+
 } from 'lucide-react';
 import { KhachThue } from '@/types';
 import { KhachThueDataTable } from './table';
@@ -48,6 +50,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 export default function KhachThuePage() {
+
+  const router = useRouter(); // ← thêm dòng này
   const cache = useCache<{ khachThueList: KhachThue[] }>({ key: 'khach-thue-data', duration: 300000 });
   const [khachThueList, setKhachThueList] = useState<KhachThue[]>([]);
   const [loading, setLoading] = useState(true);
