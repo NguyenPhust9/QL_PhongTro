@@ -51,7 +51,7 @@ export default function Home() {
             {/* Logo mobile */}
             <div className="mb-8 flex justify-center md:hidden">
               <Image
-                src="/oria_homes_full_1024.png"
+                src="/logo_oria.png"
                 alt="Oria Homes"
                 width={1024}
                 height={1024}
