@@ -81,7 +81,6 @@ export default function PhongPage() {
   const [isTenantsViewerOpen, setIsTenantsViewerOpen] = useState(false);
   const [viewingTenants, setViewingTenants] = useState<any[]>([]);
   const [viewingTenantsPhongName, setViewingTenantsPhongName] = useState('');
-  // ── Thêm: state cho mobile detail modal ──
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const [mobileDetailPhong, setMobileDetailPhong] = useState<Phong | null>(null);
 
@@ -214,7 +213,6 @@ export default function PhongPage() {
     }
   };
 
-  // ── Thêm: mở mobile detail modal ──
   const handleMobileCardClick = (phong: Phong) => {
     setMobileDetailPhong(phong);
     setIsMobileDetailOpen(true);
@@ -479,7 +477,6 @@ export default function PhongPage() {
               };
 
               return (
-                // ── Thêm onClick để mở detail modal ──
                 <div
                   key={phong._id}
                   className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all hover:shadow-md hover:border-orange-200 dark:hover:border-orange-900/30 cursor-pointer"
@@ -511,7 +508,6 @@ export default function PhongPage() {
                       </div>
                     </div>
 
-                    {/* Thông tin người thuê */}
                     {(() => {
                       const phongData = phong as any;
                       const hopDong = phongData.hopDongHienTai;
@@ -608,7 +604,7 @@ export default function PhongPage() {
         )}
       </div>
 
-      {/* ── Thêm: Mobile Detail Dialog ── */}
+      {/* Mobile Detail Dialog */}
       <Dialog open={isMobileDetailOpen} onOpenChange={setIsMobileDetailOpen}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-0 overflow-hidden gap-0">
           {mobileDetailPhong && (() => {
@@ -632,9 +628,7 @@ export default function PhongPage() {
             };
             return (
               <>
-                {/* Stripe */}
                 <div className={`h-1.5 w-full ${getTrangThaiColor(mobileDetailPhong.trangThai)}`} />
-                {/* Header */}
                 <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -650,9 +644,7 @@ export default function PhongPage() {
                   </div>
                 </div>
                 <Separator />
-                {/* Body */}
                 <div className="px-5 py-2 max-h-[55vh] overflow-y-auto space-y-3">
-                  {/* Thông tin */}
                   <div className="grid grid-cols-3 gap-2 pt-2">
                     <div className="rounded-lg bg-zinc-50 dark:bg-zinc-800 p-3 text-center">
                       <p className="text-xs text-zinc-500 mb-1">Diện tích</p>
@@ -671,7 +663,6 @@ export default function PhongPage() {
                       </p>
                     </div>
                   </div>
-                  {/* Tiện nghi */}
                   {p.tienNghi?.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Tiện nghi</p>
@@ -682,7 +673,6 @@ export default function PhongPage() {
                       </div>
                     </div>
                   )}
-                  {/* Người thuê */}
                   <div>
                     <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Người thuê</p>
                     {hasNguoiThue ? (
@@ -725,7 +715,6 @@ export default function PhongPage() {
                   <div className="pb-2" />
                 </div>
                 <Separator />
-                {/* Footer */}
                 <div className="px-5 py-3 flex items-center justify-between gap-2 bg-zinc-50 dark:bg-zinc-900">
                   <div className="flex gap-2">
                     {imageCount > 0 && (
@@ -844,7 +833,9 @@ export default function PhongPage() {
   );
 }
 
-// Form component for adding/editing phong
+// ─────────────────────────────────────────────
+// Form component
+// ─────────────────────────────────────────────
 function PhongForm({ 
   phong, 
   toaNhaList,
@@ -877,13 +868,11 @@ function PhongForm({
     trangThai: phong?.trangThai || 'trong',
   });
   const [activeTab, setActiveTab] = useState('thong-tin');
+  const [customTienNghiInput, setCustomTienNghiInput] = useState('');
 
   useEffect(() => {
     if (phong) {
       const toaNhaId = getToaNhaId(phong.toaNha);
-      console.log('Editing phong:', phong);
-      console.log('toaNha object:', phong.toaNha);
-      console.log('toaNha ID:', toaNhaId);
       setFormData({
         maPhong: phong.maPhong || '',
         toaNha: toaNhaId,
@@ -936,12 +925,43 @@ function PhongForm({
     { value: 'bat', label: 'Bát' },
   ];
 
-  const allSelected = formData.tienNghi.length === tienNghiOptions.length;
+  // Tiện nghi tùy chỉnh = những cái KHÔNG có trong danh sách mặc định
+  const customTienNghi = formData.tienNghi.filter(
+    t => !tienNghiOptions.some(o => o.value === t)
+  );
+
+  const allSelected = tienNghiOptions.every(o => formData.tienNghi.includes(o.value));
 
   const handleToggleAllTienNghi = () => {
+    const defaultValues = tienNghiOptions.map(o => o.value);
+    if (allSelected) {
+      setFormData(prev => ({
+        ...prev,
+        tienNghi: prev.tienNghi.filter(t => !defaultValues.includes(t)),
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        tienNghi: [...new Set([...prev.tienNghi, ...defaultValues])],
+      }));
+    }
+  };
+
+  const handleAddCustomTienNghi = () => {
+    const trimmed = customTienNghiInput.trim();
+    if (!trimmed) return;
+    if (formData.tienNghi.includes(trimmed)) {
+      toast.info('Tiện nghi này đã tồn tại');
+      return;
+    }
+    setFormData(prev => ({ ...prev, tienNghi: [...prev.tienNghi, trimmed] }));
+    setCustomTienNghiInput('');
+  };
+
+  const handleRemoveCustomTienNghi = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      tienNghi: allSelected ? [] : tienNghiOptions.map(item => item.value)
+      tienNghi: prev.tienNghi.filter(t => t !== value),
     }));
   };
 
@@ -1094,16 +1114,20 @@ function PhongForm({
               placeholder="Mô tả chi tiết về phòng..." />
           </div>
 
+          {/* ═══════════════ TIỆN NGHI ═══════════════ */}
           <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
               <Label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                Tiện nghi ({formData.tienNghi.length}/{tienNghiOptions.length})
+                Tiện nghi ({formData.tienNghi.length})
               </Label>
               <Button type="button" variant="outline" size="sm" onClick={handleToggleAllTienNghi}
                 className="text-xs border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900">
                 {allSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
               </Button>
             </div>
+
+            {/* Checkbox mặc định */}
             <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {tienNghiOptions.map((option) => (
@@ -1117,7 +1141,59 @@ function PhongForm({
                 ))}
               </div>
             </div>
+
+            {/* ── Ô nhập tiện nghi tùy chỉnh — nằm NGOÀI box xám ── */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Thêm tiện nghi khác
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  value={customTienNghiInput}
+                  onChange={(e) => setCustomTienNghiInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomTienNghi();
+                    }
+                  }}
+                  placeholder="VD: Hồ bơi, Sân thượng, Ban công..."
+                  className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddCustomTienNghi}
+                  className="shrink-0 border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Hiển thị badge tiện nghi tùy chỉnh */}
+              {customTienNghi.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {customTienNghi.map((t) => (
+                    <span
+                      key={t}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800"
+                    >
+                      {t}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomTienNghi(t)}
+                        className="hover:text-red-500 transition-colors leading-none"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          {/* ═══════════════════════════════════════ */}
+
         </TabsContent>
 
         <TabsContent value="anh-phong" className="space-y-6 mt-6">
