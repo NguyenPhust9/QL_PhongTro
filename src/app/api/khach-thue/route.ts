@@ -164,14 +164,23 @@ const existingKhachThue = await KhachThue.findOne({ $or: orConditions });
       );
     }
 
-    const newKhachThue = new KhachThue({
-      ...validatedData,
-      soDienThoai: validatedData.soDienThoai || undefined, // ← thêm dòng này
-      email: validatedData.email || undefined,             // ← luôn xử lý cả email
-      ngaySinh: new Date(validatedData.ngaySinh),
-      anhCCCD: validatedData.anhCCCD || { matTruoc: '', matSau: '' },
-      trangThai: 'chuaThue', // Mặc định là chưa thuê, sẽ được cập nhật tự động
-    });
+   // MỚI
+const ngaySinh = new Date(validatedData.ngaySinh);
+const matKhauMacDinh = [
+  String(ngaySinh.getDate()).padStart(2, '0'),
+  String(ngaySinh.getMonth() + 1).padStart(2, '0'),
+  ngaySinh.getFullYear()
+].join('');
+
+const newKhachThue = new KhachThue({
+  ...validatedData,
+  soDienThoai: validatedData.soDienThoai || undefined,
+  email: validatedData.email || undefined,
+  ngaySinh,
+  anhCCCD: validatedData.anhCCCD || { matTruoc: '', matSau: '' },
+  trangThai: 'chuaThue',
+  matKhau: validatedData.matKhau || matKhauMacDinh,
+});
 
     await newKhachThue.save();
 

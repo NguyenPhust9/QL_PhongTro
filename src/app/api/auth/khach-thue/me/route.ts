@@ -3,6 +3,8 @@ import dbConnect from '@/lib/mongodb';
 import KhachThue from '@/models/KhachThue';
 import HopDong from '@/models/HopDong';
 import HoaDon from '@/models/HoaDon';
+import '@/models/Phong';   // ✅ thêm
+import '@/models/ToaNha'; 
 import jwt from 'jsonwebtoken';
 
 export async function GET(request: NextRequest) {

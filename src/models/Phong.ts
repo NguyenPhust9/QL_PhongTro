@@ -19,13 +19,13 @@ export interface IPhong extends Document {
 }
 
 const PhongSchema = new Schema<IPhong>({
-  maPhong: {
-    type: String,
-    required: [true, 'Mã phòng là bắt buộc'],
-    trim: true,
-    uppercase: true,
-    match: [/^[A-Z0-9]+$/, 'Mã phòng chỉ được chứa chữ cái và số']
-  },
+maPhong: {
+  type: String,
+  required: [true, 'Mã phòng là bắt buộc'],
+  trim: true,
+  uppercase: true,
+  match: [/^[A-Z0-9.]+$/, 'Mã phòng chỉ được chứa chữ cái, số và dấu chấm']
+},
   toaNha: {
     type: Schema.Types.ObjectId,
     ref: 'ToaNha',
