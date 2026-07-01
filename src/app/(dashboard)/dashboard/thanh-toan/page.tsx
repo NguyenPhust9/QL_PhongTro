@@ -55,8 +55,8 @@ import { toast } from 'sonner';
 import { ThanhToanDataTable } from './table';
 
 // Type cho ThanhToan đã được populate
-type ThanhToanPopulated = Omit<ThanhToan, 'hoaDon'> & {
-  hoaDon: string | HoaDon;
+export type ThanhToanPopulated = Omit<ThanhToan, 'hoaDon'> & {
+  hoaDon: string | HoaDon | null;
 };
 
 export default function ThanhToanPage() {
@@ -164,8 +164,13 @@ export default function ThanhToanPage() {
     }
   };
 
-  const getHoaDonInfo = (hoaDon: string | any) => {
+  const getHoaDonInfo = (hoaDon: string | any | null) => {
     console.log('getHoaDonInfo called with:', hoaDon, 'type:', typeof hoaDon);
+
+    // Nếu hoaDon null/undefined (hóa đơn gốc đã bị xóa)
+    if (!hoaDon) {
+      return 'Hóa đơn đã bị xóa';
+    }
     
     // Nếu hoaDon là object (đã được populate), lấy maHoaDon trực tiếp
     if (typeof hoaDon === 'object' && hoaDon?.maHoaDon) {
@@ -290,16 +295,16 @@ export default function ThanhToanPage() {
                 </DialogDescription>
               </DialogHeader>
               
-              <ThanhToanForm 
-                thanhToan={editingThanhToan}
-                hoaDonList={hoaDonList}
-                onClose={() => setIsDialogOpen(false)}
-                onSuccess={() => {
-                  cache.clearCache();
-                  setIsDialogOpen(false);
-                  fetchData(true);
-                }}
-              />
+             <ThanhToanForm 
+  thanhToan={editingThanhToan}
+  hoaDonList={hoaDonList}
+  onClose={() => setIsDialogOpen(false)}
+  onSuccess={() => {
+    cache.clearAllCaches();
+    setIsDialogOpen(false);
+    fetchData(true);
+  }}
+/>
             </DialogContent>
           </Dialog>
         </div>
@@ -426,7 +431,7 @@ export default function ThanhToanPage() {
         {/* Mobile Card List */}
         <div className="space-y-3">
           {filteredThanhToan.map((thanhToan) => {
-            const hoaDonInfo = typeof thanhToan.hoaDon === 'object' ? (thanhToan.hoaDon as HoaDon) : null;
+            const hoaDonInfo = thanhToan.hoaDon && typeof thanhToan.hoaDon === 'object' ? (thanhToan.hoaDon as HoaDon) : null;
             const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
             const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null;
             
@@ -551,7 +556,7 @@ function ThanhToanForm({
 }) {
   const [formData, setFormData] = useState({
     hoaDon: thanhToan?.hoaDon ? 
-      (typeof thanhToan.hoaDon === 'string' ? thanhToan.hoaDon : (thanhToan.hoaDon as HoaDon)._id || '') : '',
+      (typeof thanhToan.hoaDon === 'string' ? thanhToan.hoaDon : (thanhToan.hoaDon as HoaDon)?._id || '') : '',
     soTien: thanhToan?.soTien || 0,
     phuongThuc: thanhToan?.phuongThuc || 'tienMat',
     nganHang: thanhToan?.thongTinChuyenKhoan?.nganHang || '',
@@ -565,7 +570,8 @@ function ThanhToanForm({
   useEffect(() => {
     if (thanhToan) {
       setFormData({
-        hoaDon: typeof thanhToan.hoaDon === 'string' ? thanhToan.hoaDon : (thanhToan.hoaDon as HoaDon)._id || '',
+        hoaDon: thanhToan.hoaDon ? 
+          (typeof thanhToan.hoaDon === 'string' ? thanhToan.hoaDon : (thanhToan.hoaDon as HoaDon)?._id || '') : '',
         soTien: thanhToan.soTien,
         phuongThuc: thanhToan.phuongThuc,
         nganHang: thanhToan.thongTinChuyenKhoan?.nganHang || '',

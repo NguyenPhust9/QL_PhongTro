@@ -137,7 +137,7 @@ export default function HoaDonPage() {
       }
       
       // Fetch hóa đơn từ API
-      const hoaDonResponse = await fetch('/api/hoa-don');
+      const hoaDonResponse = await fetch('/api/hoa-don?limit=1000');
       const hoaDonData = hoaDonResponse.ok ? await hoaDonResponse.json() : { data: [] };
       const hoaDons = hoaDonData.data || [];
       setHoaDonList(hoaDons);
@@ -1095,7 +1095,7 @@ export default function HoaDonPage() {
 
       {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="w-[98vw] md:w-full max-w-6xl overflow-hidden">   
+  <DialogContent className="w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-lg md:text-xl">Xác nhận thanh toán</DialogTitle>
             <DialogDescription className="text-xs md:text-sm">

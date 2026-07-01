@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import Image from 'next/image';
 
 const EMOJI_LIST = ['❤️', '😆', '😮', '😢', '😡', '👍'];
 
@@ -16,9 +15,10 @@ interface ITinNhan {
   nguoiGuiId: string;
   loaiNguoiGui: 'nhanVien' | 'khachThue';
   noiDung: string;
-  imageUrl?: string;    // ← THÊM
+  imageUrl?: string;
   ngayTao: string;
   reactions: IReaction[];
+  _isPending?: boolean; // tin nhắn tạm (optimistic)
 }
 
 interface Props {
@@ -27,6 +27,23 @@ interface Props {
   nguoiGuiIdOverride?: string;
   loaiNguoiGuiOverride?: 'nhanVien' | 'khachThue';
   session?: { user?: { id?: string; role?: string } } | null;
+}
+
+// ─── Cache toàn cục (tồn tại suốt session, không reset khi re-render) ─────────
+export const messageCache = new Map<string, ITinNhan[]>();
+
+// ─── Hàm prefetch (gọi từ component cha khi hover) ───────────────────────────
+export async function prefetchMessages(cuocHoiThoaiId: string) {
+  if (!cuocHoiThoaiId) return;
+  if (messageCache.has(cuocHoiThoaiId)) return; // đã có cache rồi, bỏ qua
+
+  try {
+    const res = await fetch(`/api/chat/messages/${cuocHoiThoaiId}`);
+    const data: ITinNhan[] = await res.json();
+    messageCache.set(cuocHoiThoaiId, data);
+  } catch {
+    // bỏ qua lỗi prefetch, component sẽ tự fetch sau
+  }
 }
 
 // ─── Upload thẳng lên Cloudinary (unsigned) ───────────────────────────────────
@@ -57,7 +74,7 @@ function TinNhanItem({
 }) {
   const [showPicker, setShowPicker] = useState(false);
   const [hover, setHover] = useState(false);
-  const [xemAnh, setXemAnh] = useState(false);   // lightbox ảnh
+  const [xemAnh, setXemAnh] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -104,7 +121,9 @@ function TinNhanItem({
             {/* Bubble tin nhắn */}
             <div className={`relative rounded-2xl text-sm leading-relaxed overflow-hidden
               ${laToi ? 'bg-blue-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}
-              ${tin.imageUrl ? 'p-1' : 'px-3 py-2'}`}
+              ${tin.imageUrl ? 'p-1' : 'px-3 py-2'}
+              ${tin._isPending ? 'opacity-60' : 'opacity-100'}
+              transition-opacity duration-200`}
             >
               {/* Ảnh */}
               {tin.imageUrl && (
@@ -112,44 +131,56 @@ function TinNhanItem({
                   src={tin.imageUrl}
                   alt="Hình ảnh"
                   className="rounded-xl max-w-[240px] max-h-[320px] object-cover cursor-pointer block"
-                  onClick={() => setXemAnh(true)}
+                  onClick={() => !tin._isPending && setXemAnh(true)}
                 />
               )}
-              {/* Text (nếu có kèm theo ảnh thì hiện bên dưới) */}
+              {/* Text */}
               {tin.noiDung && (
                 <p className={tin.imageUrl ? 'px-2 py-1' : ''}>{tin.noiDung}</p>
               )}
-            </div>
 
-            {/* Nút reaction */}
-            <div className="relative">
-              <button
-                onClick={() => setShowPicker(p => !p)}
-                className={`transition-all duration-150 text-base w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600
-                  ${hover || showPicker ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-              >
-                🙂
-              </button>
-
-              {showPicker && (
-                <div
-                  ref={pickerRef}
-                  className={`absolute z-50 bottom-full mb-1 bg-white border border-gray-200 rounded-full shadow-lg px-2 py-1.5 flex items-center gap-1
-                    ${laToi ? 'right-0' : 'left-0'}`}
-                >
-                  {EMOJI_LIST.map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={() => { onReact(tin._id, emoji); setShowPicker(false); }}
-                      className={`text-xl hover:scale-125 transition-transform rounded-full w-8 h-8 flex items-center justify-center
-                        ${myReaction === emoji ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+              {/* Icon đang gửi */}
+              {tin._isPending && (
+                <span className="absolute bottom-1 right-2 text-[10px] text-white/70 flex items-center gap-0.5">
+                  <svg className="animate-spin w-2.5 h-2.5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                </span>
               )}
             </div>
+
+            {/* Nút reaction (ẩn với tin tạm) */}
+            {!tin._isPending && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowPicker(p => !p)}
+                  className={`transition-all duration-150 text-base w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600
+                    ${hover || showPicker ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                >
+                  🙂
+                </button>
+
+                {showPicker && (
+                  <div
+                    ref={pickerRef}
+                    className={`absolute z-50 bottom-full mb-1 bg-white border border-gray-200 rounded-full shadow-lg px-2 py-1.5 flex items-center gap-1
+                      ${laToi ? 'right-0' : 'left-0'}`}
+                  >
+                    {EMOJI_LIST.map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => { onReact(tin._id, emoji); setShowPicker(false); }}
+                        className={`text-xl hover:scale-125 transition-transform rounded-full w-8 h-8 flex items-center justify-center
+                          ${myReaction === emoji ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Reactions */}
@@ -176,11 +207,34 @@ function TinNhanItem({
   );
 }
 
+// ─── Skeleton loading (hiện khi chưa có cache) ────────────────────────────────
+function TinNhanSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {[false, true, false, true, false].map((laToi, i) => (
+        <div key={i} className={`flex ${laToi ? 'justify-end' : 'justify-start'}`}>
+          <div className={`h-9 rounded-2xl animate-pulse bg-gray-200 ${
+            laToi ? 'rounded-br-sm' : 'rounded-bl-sm'
+          }`}
+            style={{ width: `${80 + (i * 37) % 120}px` }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── ChatBox chính ────────────────────────────────────────────────────────────
 export default function ChatBox({
   cuocHoiThoaiId, tenNguoiChat, nguoiGuiIdOverride, loaiNguoiGuiOverride, session,
 }: Props) {
-  const [danhSachTin, setDanhSachTin] = useState<ITinNhan[]>([]);
+  const [danhSachTin, setDanhSachTin] = useState<ITinNhan[]>(() => {
+    // ✅ Khởi tạo state từ cache NGAY KHI render lần đầu (không cần đợi useEffect)
+    return messageCache.get(cuocHoiThoaiId) ?? [];
+  });
+  const [dangTaiLanDau, setDangTaiLanDau] = useState(
+    !messageCache.has(cuocHoiThoaiId) // chỉ hiện skeleton nếu chưa có cache
+  );
   const [noiDung, setNoiDung] = useState('');
   const [dangKetNoi, setDangKetNoi] = useState(false);
 
@@ -189,23 +243,30 @@ export default function ChatBox({
   const [anhPreview, setAnhPreview] = useState<string | null>(null);
   const [dangUpload, setDangUpload] = useState(false);
 
-  const socketRef    = useRef<Socket | null>(null);
-  const cuoiRef      = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);   // chọn từ thư viện
-  const cameraInputRef = useRef<HTMLInputElement>(null); // chụp ảnh (mobile)
+  const socketRef      = useRef<Socket | null>(null);
+  const cuoiRef        = useRef<HTMLDivElement>(null);
+  const fileInputRef   = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const nguoiGuiId = nguoiGuiIdOverride ?? session?.user?.id ?? '';
   const loaiNguoiGui: 'nhanVien' | 'khachThue' = loaiNguoiGuiOverride ??
     (session?.user?.role === 'khachThue' ? 'khachThue' : 'nhanVien');
   const sanSang = !!cuocHoiThoaiId && !!nguoiGuiId;
 
-  // Kết nối socket
+  // Kết nối socket + fetch tin nhắn
   useEffect(() => {
     if (!sanSang) return;
 
+    // ✅ Fetch ngầm (nếu có cache thì UI đã hiện rồi, fetch để cập nhật)
     fetch(`/api/chat/messages/${cuocHoiThoaiId}`)
       .then(r => r.json())
-      .then(setDanhSachTin);
+      .then((data: ITinNhan[]) => {
+        const dataVoiReactions = data.map(t => ({ ...t, reactions: t.reactions || [] }));
+        messageCache.set(cuocHoiThoaiId, dataVoiReactions); // cập nhật cache
+        setDanhSachTin(dataVoiReactions);
+        setDangTaiLanDau(false);
+      })
+      .catch(() => setDangTaiLanDau(false));
 
     const socket = io({ path: '/api/socket' });
     socketRef.current = socket;
@@ -216,14 +277,35 @@ export default function ChatBox({
       socket.emit('daDoc', { cuocHoiThoaiId, loaiNguoiDoc: loaiNguoiGui });
     });
 
-    socket.on('tinNhanMoi', (tin: ITinNhan) => {
-      setDanhSachTin(prev => [...prev, { ...tin, reactions: tin.reactions || [] }]);
+    socket.on('tinNhanMoi', (tin: ITinNhan & { tempId?: string }) => {
+      setDanhSachTin(prev => {
+        let updated: ITinNhan[];
+
+        if (tin.tempId) {
+          // Replace tin tạm bằng tin thật từ server
+          updated = prev.map(t =>
+            t._id === tin.tempId
+              ? { ...tin, reactions: tin.reactions || [], _isPending: false }
+              : t
+          );
+        } else if (prev.some(t => t._id === tin._id)) {
+          // Tránh duplicate
+          updated = prev;
+        } else {
+          updated = [...prev, { ...tin, reactions: tin.reactions || [] }];
+        }
+
+        messageCache.set(cuocHoiThoaiId, updated); // ✅ cập nhật cache realtime
+        return updated;
+      });
     });
 
     socket.on('capNhatReaction', ({ tinNhanId, reactions }: { tinNhanId: string; reactions: IReaction[] }) => {
-      setDanhSachTin(prev =>
-        prev.map(t => t._id === tinNhanId ? { ...t, reactions } : t)
-      );
+      setDanhSachTin(prev => {
+        const updated = prev.map(t => t._id === tinNhanId ? { ...t, reactions } : t);
+        messageCache.set(cuocHoiThoaiId, updated); // ✅ cập nhật cache
+        return updated;
+      });
     });
 
     socket.on('disconnect', () => setDangKetNoi(false));
@@ -231,7 +313,7 @@ export default function ChatBox({
     return () => { socket.disconnect(); };
   }, [cuocHoiThoaiId, sanSang]);
 
-  // Auto scroll
+  // Auto scroll xuống cuối
   useEffect(() => {
     cuoiRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [danhSachTin]);
@@ -243,51 +325,72 @@ export default function ChatBox({
     if (!file.type.startsWith('image/')) return alert('Chỉ hỗ trợ file ảnh');
     if (file.size > 10 * 1024 * 1024) return alert('Ảnh tối đa 10MB');
 
-    if (anhPreview) URL.revokeObjectURL(anhPreview); // giải phóng URL cũ
+    if (anhPreview) URL.revokeObjectURL(anhPreview);
     setFileAnh(file);
     setAnhPreview(URL.createObjectURL(file));
-    e.target.value = ''; // reset để chọn lại cùng file được
+    e.target.value = '';
   };
 
-  const huyAnh = () => {
+  const huyAnh = useCallback(() => {
     if (anhPreview) URL.revokeObjectURL(anhPreview);
     setFileAnh(null);
     setAnhPreview(null);
-  };
+  }, [anhPreview]);
 
-  // Gửi tin nhắn (có thể kèm ảnh)
+  // Gửi tin nhắn với Optimistic UI
   const guiTin = async () => {
     if (!socketRef.current || !nguoiGuiId) return;
     if (!noiDung.trim() && !fileAnh) return;
 
-    let imageUrl: string | undefined;
+    const tempId = `temp-${Date.now()}`;
+    const currentFile = fileAnh;
+    const currentNoiDung = noiDung.trim();
+    const localPreview = anhPreview ?? undefined;
 
-    if (fileAnh) {
+    // ✅ 1. Hiện tin nhắn NGAY LẬP TỨC (blob URL cho ảnh)
+    const tempMsg: ITinNhan = {
+      _id: tempId,
+      nguoiGuiId,
+      loaiNguoiGui,
+      noiDung: currentNoiDung,
+      imageUrl: localPreview,
+      ngayTao: new Date().toISOString(),
+      reactions: [],
+      _isPending: true,
+    };
+    setDanhSachTin(prev => [...prev, tempMsg]);
+    setNoiDung('');
+    huyAnh();
+
+    // ✅ 2. Upload ảnh ngầm (user không phải chờ)
+    let imageUrl: string | undefined;
+    if (currentFile) {
       try {
         setDangUpload(true);
-        imageUrl = await uploadLenCloudinary(fileAnh);
-        huyAnh();
+        imageUrl = await uploadLenCloudinary(currentFile);
       } catch {
+        // Xóa tin tạm nếu upload thất bại
+        setDanhSachTin(prev => prev.filter(t => t._id !== tempId));
         alert('Gửi ảnh thất bại, vui lòng thử lại');
-        setDangUpload(false);
         return;
       } finally {
         setDangUpload(false);
       }
     }
 
+    // ✅ 3. Emit kèm tempId để server echo lại → replace tin tạm
     socketRef.current.emit('guiTinNhan', {
       cuocHoiThoaiId,
       nguoiGuiId,
       loaiNguoiGui,
-      noiDung: noiDung.trim(),
+      noiDung: currentNoiDung,
       imageUrl,
+      tempId,
     });
-
-    setNoiDung('');
   };
 
   const handleReact = useCallback(async (tinNhanId: string, emoji: string) => {
+    // Optimistic update reaction
     setDanhSachTin(prev => prev.map(t => {
       if (t._id !== tinNhanId) return t;
       const reactions = [...(t.reactions ?? [])];
@@ -327,26 +430,30 @@ export default function ChatBox({
         </div>
       </div>
 
-      {/* Danh sách tin nhắn */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {danhSachTin.length === 0 && (
-          <p className="text-center text-gray-400 text-sm mt-10">
-            Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
-          </p>
-        )}
-        {danhSachTin.map(tin => (
-          <TinNhanItem
-            key={tin._id}
-            tin={{ ...tin, reactions: tin.reactions || [] }}
-            laToi={tin.nguoiGuiId === nguoiGuiId}
-            nguoiGuiId={nguoiGuiId}
-            loaiNguoiGui={loaiNguoiGui}
-            onReact={handleReact}
-            formatGio={formatGio}
-          />
-        ))}
-        <div ref={cuoiRef} />
-      </div>
+      {/* Danh sách tin nhắn hoặc skeleton */}
+      {dangTaiLanDau ? (
+        <TinNhanSkeleton />
+      ) : (
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {danhSachTin.length === 0 && (
+            <p className="text-center text-gray-400 text-sm mt-10">
+              Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
+            </p>
+          )}
+          {danhSachTin.map(tin => (
+            <TinNhanItem
+              key={tin._id}
+              tin={{ ...tin, reactions: tin.reactions || [] }}
+              laToi={tin.nguoiGuiId === nguoiGuiId}
+              nguoiGuiId={nguoiGuiId}
+              loaiNguoiGui={loaiNguoiGui}
+              onReact={handleReact}
+              formatGio={formatGio}
+            />
+          ))}
+          <div ref={cuoiRef} />
+        </div>
+      )}
 
       {/* Preview ảnh trước khi gửi */}
       {anhPreview && (
@@ -373,22 +480,8 @@ export default function ChatBox({
       {/* Input gửi tin */}
       <div className="flex items-center gap-2 p-3 border-t bg-gray-50">
         {/* Hidden inputs */}
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          onChange={handleChonAnh}
-          className="hidden"
-        />
-        {/* capture="environment" → mở camera sau trên mobile */}
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          ref={cameraInputRef}
-          onChange={handleChonAnh}
-          className="hidden"
-        />
+        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleChonAnh} className="hidden" />
+        <input type="file" accept="image/*" capture="environment" ref={cameraInputRef} onChange={handleChonAnh} className="hidden" />
 
         {/* Nút thư viện ảnh */}
         <button
@@ -403,7 +496,7 @@ export default function ChatBox({
           </svg>
         </button>
 
-        {/* Nút chụp ảnh (chủ yếu dùng trên mobile) */}
+        {/* Nút chụp ảnh */}
         <button
           onClick={() => cameraInputRef.current?.click()}
           disabled={dangUpload}

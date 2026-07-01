@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import HoaDon from '@/models/HoaDon';
 import HopDong from '@/models/HopDong';
+import KhachThue from '@/models/KhachThue'; // 👈 thêm dòng này
+
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PhiDichVu } from '@/types';

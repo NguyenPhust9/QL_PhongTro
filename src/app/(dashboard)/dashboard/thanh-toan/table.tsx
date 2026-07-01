@@ -86,12 +86,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { ThanhToan, HoaDon } from '@/types'
-
-// Type cho ThanhToan đã được populate
-type ThanhToanPopulated = Omit<ThanhToan, 'hoaDon'> & {
-  hoaDon: string | HoaDon
-}
+import type { HoaDon } from '@/types'
+import type { ThanhToanPopulated } from './page'
 
 // Helper functions
 const formatCurrency = (amount: number) => {
@@ -157,7 +153,10 @@ type ThanhToanTableProps = {
   onDownload?: (thanhToan: ThanhToanPopulated) => void
 }
 
-const getHoaDonInfo = (hoaDon: string | HoaDon, hoaDonList: HoaDon[]) => {
+const getHoaDonInfo = (hoaDon: string | HoaDon | null, hoaDonList: HoaDon[]) => {
+  if (!hoaDon) {
+    return 'Hóa đơn đã bị xóa'
+  }
   if (typeof hoaDon === 'object' && hoaDon?.maHoaDon) {
     return hoaDon.maHoaDon
   }
@@ -205,7 +204,7 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     accessorKey: "hoaDon",
     header: "Hóa đơn",
     cell: ({ row }) => {
-      const hoaDonInfo = typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
       return (
         <div className="min-w-32">
           <div className="flex items-center gap-2">
@@ -228,7 +227,7 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     accessorKey: "phong",
     header: "Phòng",
     cell: ({ row }) => {
-      const hoaDonInfo = typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
       const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
       return (
         <div className="flex items-center gap-2 min-w-24">
@@ -244,7 +243,7 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     accessorKey: "khachThue",
     header: "Người đại diện",
     cell: ({ row }) => {
-      const hoaDonInfo = typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
       const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null;
       return (
         <div className="flex items-center gap-2 min-w-32">
@@ -671,4 +670,3 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
     </div>
   )
 }
-
