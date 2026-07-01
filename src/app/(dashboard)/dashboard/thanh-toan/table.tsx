@@ -465,8 +465,8 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
           <div className="flex-1 sm:max-w-xs">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Tìm kiếm ghi chú, giao dịch..."
+             <Input
+                placeholder="Tìm kiếm theo phòng, ghi chú, giao dịch..."
                 value={searchTerm || ''}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 className="pl-10"

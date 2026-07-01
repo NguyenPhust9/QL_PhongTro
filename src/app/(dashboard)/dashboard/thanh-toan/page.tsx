@@ -97,16 +97,16 @@ export default function ThanhToanPage() {
       }
       
       // Fetch thanh toan từ API
-      const thanhToanResponse = await fetch('/api/thanh-toan');
-      const thanhToanData = thanhToanResponse.ok ? await thanhToanResponse.json() : { data: [] };
-      const thanhToans = thanhToanData.data || [];
-      setThanhToanList(thanhToans);
+const thanhToanResponse = await fetch('/api/thanh-toan?limit=1000');
+const thanhToanData = thanhToanResponse.ok ? await thanhToanResponse.json() : { data: [] };
+const thanhToans = thanhToanData.data || [];
+setThanhToanList(thanhToans);
 
-      // Fetch hoa don từ API để hiển thị thông tin
-      const hoaDonResponse = await fetch('/api/hoa-don');
-      const hoaDonData = hoaDonResponse.ok ? await hoaDonResponse.json() : { data: [] };
-      const hoaDons = hoaDonData.data || [];
-      setHoaDonList(hoaDons);
+// Fetch hoa don từ API để hiển thị thông tin
+const hoaDonResponse = await fetch('/api/hoa-don?limit=1000');
+const hoaDonData = hoaDonResponse.ok ? await hoaDonResponse.json() : { data: [] };
+const hoaDons = hoaDonData.data || [];
+setHoaDonList(hoaDons);
       
       cache.setCache({
         thanhToanList: thanhToans,
@@ -139,9 +139,13 @@ export default function ThanhToanPage() {
     }
   };
 
-  const filteredThanhToan = thanhToanList.filter(thanhToan => {
+ const filteredThanhToan = thanhToanList.filter(thanhToan => {
+    const hoaDonInfo = thanhToan.hoaDon && typeof thanhToan.hoaDon === 'object' ? thanhToan.hoaDon as HoaDon : null;
+    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+
     const matchesSearch = thanhToan.ghiChu?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         thanhToan.thongTinChuyenKhoan?.soGiaoDich?.toLowerCase().includes(searchTerm.toLowerCase());
+                         thanhToan.thongTinChuyenKhoan?.soGiaoDich?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         phongInfo?.maPhong?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesMethod = methodFilter === 'all' || thanhToan.phuongThuc === methodFilter;
     const matchesDate = dateFilter === 'all' || 
                        (dateFilter === 'today' && isToday(thanhToan.ngayThanhToan)) ||

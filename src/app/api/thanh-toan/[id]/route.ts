@@ -5,10 +5,35 @@ import HoaDon from '@/models/HoaDon';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+// Hàm helper: tính lại daThanhToan/conLai/trangThai của một hóa đơn
+// dựa trên TỔNG THỰC TẾ các thanh toán hiện có trong DB (tránh cộng/trừ
+// tích lũy dễ bị lệch qua nhiều lần sửa/xóa)
+async function recalculateHoaDon(hoaDonId: any) {
+  const hoaDon = await HoaDon.findById(hoaDonId);
+  if (!hoaDon) return null;
+
+  const payments = await ThanhToan.find({ hoaDon: hoaDonId });
+  const tongDaThanhToan = payments.reduce((sum, tt) => sum + tt.soTien, 0);
+
+  hoaDon.daThanhToan = tongDaThanhToan;
+  hoaDon.conLai = hoaDon.tongTien - tongDaThanhToan;
+
+  if (hoaDon.conLai <= 0) {
+    hoaDon.trangThai = 'daThanhToan';
+  } else if (hoaDon.daThanhToan > 0) {
+    hoaDon.trangThai = 'daThanhToanMotPhan';
+  } else {
+    hoaDon.trangThai = 'chuaThanhToan';
+  }
+
+  await hoaDon.save();
+  return hoaDon;
+}
+
 // PUT - Cập nhật thanh toán
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,7 +43,7 @@ export async function PUT(
 
     await connectToDatabase();
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const {
       hoaDonId,
@@ -47,35 +72,31 @@ export async function PUT(
       );
     }
 
-    // Kiểm tra hóa đơn tồn tại
-    const hoaDon = await HoaDon.findById(hoaDonId);
-    if (!hoaDon) {
+    const hoaDonCuId = thanhToanHienTai.hoaDon;
+
+    // Kiểm tra hóa đơn mới tồn tại
+    const hoaDonMoiTonTai = await HoaDon.findById(hoaDonId);
+    if (!hoaDonMoiTonTai) {
       return NextResponse.json(
         { message: 'Hóa đơn không tồn tại' },
         { status: 404 }
       );
     }
 
-    // Tính toán lại số tiền còn lại của hóa đơn
-    // Trước tiên, hoàn lại số tiền cũ
-    const hoaDonCu = await HoaDon.findById(thanhToanHienTai.hoaDon);
-    if (hoaDonCu) {
-      hoaDonCu.daThanhToan -= thanhToanHienTai.soTien;
-      hoaDonCu.conLai = hoaDonCu.tongTien - hoaDonCu.daThanhToan;
-      
-      if (hoaDonCu.conLai <= 0) {
-        hoaDonCu.trangThai = 'daThanhToan';
-      } else if (hoaDonCu.daThanhToan > 0) {
-        hoaDonCu.trangThai = 'daThanhToanMotPhan';
-      } else {
-        hoaDonCu.trangThai = 'chuaThanhToan';
-      }
-      
-      await hoaDonCu.save();
-    }
+    // Tính trước "số tiền còn lại thực tế" của hóa đơn mới để validate,
+    // loại trừ chính khoản thanh toán đang sửa nếu nó thuộc cùng hóa đơn này
+    const paymentsCuaHoaDonMoi = await ThanhToan.find({
+      hoaDon: hoaDonId,
+      _id: { $ne: id }
+    });
+    const tongDaThanhToanHoaDonMoi = paymentsCuaHoaDonMoi.reduce(
+      (sum, tt) => sum + tt.soTien,
+      0
+    );
+    const conLaiThucTe = hoaDonMoiTonTai.tongTien - tongDaThanhToanHoaDonMoi;
 
-    // Kiểm tra số tiền thanh toán mới không vượt quá số tiền còn lại
-    if (soTien > hoaDon.conLai) {
+    // Kiểm tra số tiền thanh toán mới không vượt quá số tiền còn lại thực tế
+    if (soTien > conLaiThucTe) {
       return NextResponse.json(
         { message: 'Số tiền thanh toán không được vượt quá số tiền còn lại' },
         { status: 400 }
@@ -101,17 +122,13 @@ export async function PUT(
 
     await thanhToanHienTai.save();
 
-    // Cập nhật hóa đơn mới
-    hoaDon.daThanhToan += soTien;
-    hoaDon.conLai = hoaDon.tongTien - hoaDon.daThanhToan;
-    
-    if (hoaDon.conLai <= 0) {
-      hoaDon.trangThai = 'daThanhToan';
-    } else if (hoaDon.daThanhToan > 0) {
-      hoaDon.trangThai = 'daThanhToanMotPhan';
+    // Tính lại hóa đơn CŨ (nếu khác hóa đơn mới) dựa trên tổng thực tế còn lại
+    if (hoaDonCuId && hoaDonCuId.toString() !== hoaDonId.toString()) {
+      await recalculateHoaDon(hoaDonCuId);
     }
 
-    await hoaDon.save();
+    // Tính lại hóa đơn MỚI dựa trên tổng thực tế (đã bao gồm thanh toán vừa cập nhật)
+    const hoaDon = await recalculateHoaDon(hoaDonId);
 
     // Populate để trả về dữ liệu đầy đủ
     await thanhToanHienTai.populate([
@@ -136,7 +153,7 @@ export async function PUT(
 // DELETE - Xóa thanh toán
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -146,7 +163,7 @@ export async function DELETE(
 
     await connectToDatabase();
 
-    const { id } = params;
+    const { id } = await params;
 
     // Tìm thanh toán
     const thanhToan = await ThanhToan.findById(id);
@@ -157,25 +174,15 @@ export async function DELETE(
       );
     }
 
-    // Cập nhật lại hóa đơn (hoàn lại số tiền)
-    const hoaDon = await HoaDon.findById(thanhToan.hoaDon);
-    if (hoaDon) {
-      hoaDon.daThanhToan -= thanhToan.soTien;
-      hoaDon.conLai = hoaDon.tongTien - hoaDon.daThanhToan;
-      
-      if (hoaDon.conLai <= 0) {
-        hoaDon.trangThai = 'daThanhToan';
-      } else if (hoaDon.daThanhToan > 0) {
-        hoaDon.trangThai = 'daThanhToanMotPhan';
-      } else {
-        hoaDon.trangThai = 'chuaThanhToan';
-      }
-      
-      await hoaDon.save();
-    }
+    const hoaDonId = thanhToan.hoaDon;
 
-    // Xóa thanh toán
+    // Xóa thanh toán trước
     await ThanhToan.findByIdAndDelete(id);
+
+    // Sau đó tính lại hóa đơn dựa trên tổng thực tế các thanh toán còn lại
+    if (hoaDonId) {
+      await recalculateHoaDon(hoaDonId);
+    }
 
     return NextResponse.json({
       success: true,

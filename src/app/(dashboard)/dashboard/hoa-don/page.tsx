@@ -1106,17 +1106,17 @@ export default function HoaDonPage() {
           {paymentHoaDon && (
             <PaymentForm 
               hoaDon={paymentHoaDon}
-              onClose={() => setIsPaymentDialogOpen(false)}
-              onSuccess={(updatedHoaDon) => {
-                setIsPaymentDialogOpen(false);
-                // Chỉ update dòng hóa đơn đó thay vì load lại toàn bộ
-                if (updatedHoaDon) {
-                  setHoaDonList(prev => prev.map(hd => 
-                    hd._id === updatedHoaDon._id ? updatedHoaDon : hd
-                  ));
-                  cache.clearCache(); // Xóa cache để lần sau load mới
-                }
-              }}
+              onClose={() => setIsPaymentDialogOpen(false)} 
+             onSuccess={(updatedHoaDon) => {
+  setIsPaymentDialogOpen(false);
+  // Chỉ update dòng hóa đơn đó thay vì load lại toàn bộ
+  if (updatedHoaDon) {
+    setHoaDonList(prev => prev.map(hd => 
+      hd._id === updatedHoaDon._id ? updatedHoaDon : hd
+    ));
+  }
+  cache.clearAllCaches(); // Xóa toàn bộ cache (bao gồm thanh-toan-data)
+}}
             />
           )}
         </DialogContent>
@@ -1177,7 +1177,6 @@ function PaymentForm({
       if (response.ok) {
         const result = await response.json();
         // Xóa cache và trả về dữ liệu hóa đơn đã cập nhật
-        sessionStorage.removeItem('hoa-don-data');
         toast.success(result.message || 'Thanh toán đã được tạo thành công');
         onSuccess(result.data?.hoaDon); // Truyền hóa đơn đã cập nhật
       } else {
