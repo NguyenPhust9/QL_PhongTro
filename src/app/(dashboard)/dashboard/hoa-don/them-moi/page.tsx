@@ -51,7 +51,32 @@ const getKhachThueName = (khachThueId: string | KhachThue, khachThueList: KhachT
   }
   return 'N/A';
 };
+// Chuyển "dd/mm/yyyy" -> "yyyy-mm-dd"
+const ddmmyyyyToIso = (value: string) => {
+  const parts = value.split('/');
+  if (parts.length !== 3) return '';
+  const [dd, mm, yyyy] = parts;
+  if (dd?.length === 2 && mm?.length === 2 && yyyy?.length === 4) {
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return '';
+};
 
+// Chuyển "yyyy-mm-dd" -> "dd/mm/yyyy"
+const isoToDdmmyyyy = (iso: string) => {
+  if (!iso) return '';
+  const [yyyy, mm, dd] = iso.split('-');
+  if (yyyy && mm && dd) return `${dd}/${mm}/${yyyy}`;
+  return '';
+};
+
+// Tự động chèn dấu "/" khi gõ số
+const formatDateTyping = (raw: string) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+};
 export default function ThemMoiHoaDonPage() {
   const router = useRouter();
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
@@ -97,6 +122,8 @@ export default function ThemMoiHoaDonPage() {
   };
 
   const [newPhiDichVu, setNewPhiDichVu] = useState({ ten: '', gia: 0 });
+  const [hanThanhToanDisplay, setHanThanhToanDisplay] = useState(isoToDdmmyyyy(formData.hanThanhToan));
+
   const [readingSource, setReadingSource] = useState<{
     chiSoDienBanDau: number;
     chiSoNuocBanDau: number;
@@ -504,13 +531,20 @@ export default function ThemMoiHoaDonPage() {
                     />
                   </div>
                   
-                  <div className="space-y-1">
+                 <div className="space-y-1">
                     <Label htmlFor="hanThanhToan" className="text-sm">Hạn thanh toán</Label>
                     <Input
                       id="hanThanhToan"
-                      type="date"
-                      value={formData.hanThanhToan}
-                      onChange={(e) => setFormData(prev => ({ ...prev, hanThanhToan: e.target.value }))}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="dd/mm/yyyy"
+                      value={hanThanhToanDisplay}
+                      onChange={(e) => {
+                        const formatted = formatDateTyping(e.target.value);
+                        setHanThanhToanDisplay(formatted);
+                        setFormData(prev => ({ ...prev, hanThanhToan: ddmmyyyyToIso(formatted) }));
+                      }}
+                      maxLength={10}
                       required
                       className="h-10"
                     />

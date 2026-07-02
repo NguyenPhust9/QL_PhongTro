@@ -71,6 +71,8 @@ export default function ThanhToanPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
+const [yearFilter, setYearFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingThanhToan, setEditingThanhToan] = useState<ThanhToanPopulated | null>(null);
 
@@ -154,7 +156,14 @@ setHoaDonList(hoaDons);
     
     return matchesSearch && matchesMethod && matchesDate;
   });
+const doanhThuThanhToan = thanhToanList.filter(thanhToan => {
+  const ngay = new Date(thanhToan.ngayThanhToan);
+  const matchesMonth = monthFilter === 'all' || (ngay.getMonth() + 1).toString() === monthFilter;
+  const matchesYear = yearFilter === 'all' || ngay.getFullYear().toString() === yearFilter;
+  return matchesMonth && matchesYear;
+});
 
+const tongTienTheoThang = doanhThuThanhToan.reduce((sum, t) => sum + t.soTien, 0);
   const getMethodBadge = (method: string) => {
     switch (method) {
       case 'tienMat':
@@ -215,7 +224,14 @@ setHoaDonList(hoaDons);
     const today = new Date();
     return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
   };
+const getMonthOptions = () => {
+  return Array.from({ length: 12 }, (_, i) => i + 1);
+};
 
+const getYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+};
   const handleEdit = (thanhToan: ThanhToanPopulated) => {
     setEditingThanhToan(thanhToan);
     setIsDialogOpen(true);
@@ -352,17 +368,48 @@ setHoaDonList(hoaDons);
           </div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-green-600">Tổng tiền</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(thanhToanList.reduce((sum, t) => sum + t.soTien, 0))}</p>
-            </div>
-            <div className="bg-green-100 p-2 rounded-lg">
-              <Receipt className="h-5 w-5 text-green-600 flex-shrink-0" />
-            </div>
-          </div>
-        </Card>
+       <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
+  <div className="flex items-center justify-between">
+    <div className="min-w-0 flex-1">
+      <p className="text-xs font-medium text-green-600">Tổng tiền</p>
+
+      <div className="flex items-center gap-1.5 mt-1.5 mb-1">
+        <Select value={monthFilter} onValueChange={setMonthFilter}>
+          <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
+            <SelectValue placeholder="Tháng" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
+            {getMonthOptions().map(month => (
+              <SelectItem key={month} value={month.toString()} className="text-xs">
+                Tháng {month}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={yearFilter} onValueChange={setYearFilter}>
+          <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
+            <SelectValue placeholder="Năm" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
+            {getYearOptions().map(year => (
+              <SelectItem key={year} value={year.toString()} className="text-xs">
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(tongTienTheoThang)}</p>
+    </div>
+    <div className="bg-green-100 p-2 rounded-lg">
+      <Receipt className="h-5 w-5 text-green-600 flex-shrink-0" />
+    </div>
+  </div>
+</Card>
       </div>
 
       {/* Desktop Table */}

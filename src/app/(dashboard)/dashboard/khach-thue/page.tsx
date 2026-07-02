@@ -522,6 +522,32 @@ export default function KhachThuePage() {
   );
 }
 
+// Chuyển "dd/mm/yyyy" -> "yyyy-mm-dd"
+const ddmmyyyyToIso = (value: string) => {
+  const parts = value.split('/');
+  if (parts.length !== 3) return '';
+  const [dd, mm, yyyy] = parts;
+  if (dd?.length === 2 && mm?.length === 2 && yyyy?.length === 4) {
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return '';
+};
+
+// Chuyển "yyyy-mm-dd" -> "dd/mm/yyyy"
+const isoToDdmmyyyy = (iso: string) => {
+  if (!iso) return '';
+  const [yyyy, mm, dd] = iso.split('-');
+  if (yyyy && mm && dd) return `${dd}/${mm}/${yyyy}`;
+  return '';
+};
+
+// Tự động chèn dấu "/" khi gõ số
+const formatDateTyping = (raw: string) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+};
 // Form component for adding/editing khach thue
 function KhachThueForm({ 
   khachThue, 
@@ -551,6 +577,9 @@ function KhachThueForm({
     ngheNghiep: khachThue?.ngheNghiep || '',
     matKhau: '',
   });
+const [ngaySinhDisplay, setNgaySinhDisplay] = useState(
+    isoToDdmmyyyy(khachThue?.ngaySinh ? new Date(khachThue.ngaySinh).toISOString().split('T')[0] : '')
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -667,13 +696,20 @@ if (!submitData.soDienThoai || submitData.soDienThoai.trim() === '') {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="space-y-2">
               <Label htmlFor="ngaySinh" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Ngày sinh</Label>
               <Input
                 id="ngaySinh"
-                type="date"
-                value={formData.ngaySinh}
-                onChange={(e) => setFormData(prev => ({ ...prev, ngaySinh: e.target.value }))}
+                type="text"
+                inputMode="numeric"
+                placeholder="dd/mm/yyyy"
+                value={ngaySinhDisplay}
+                onChange={(e) => {
+                  const formatted = formatDateTyping(e.target.value);
+                  setNgaySinhDisplay(formatted);
+                  setFormData(prev => ({ ...prev, ngaySinh: ddmmyyyyToIso(formatted) }));
+                }}
+                maxLength={10}
                 required
                 className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500"
               />

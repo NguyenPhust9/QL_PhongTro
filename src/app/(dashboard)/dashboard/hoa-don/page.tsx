@@ -188,7 +188,13 @@ export default function HoaDonPage() {
     
     return matchesSearch && matchesStatus && matchesMonth && matchesYear;
   });
+const doanhThuHoaDon = hoaDonList.filter(hoaDon => {
+  const matchesMonth = monthFilter === 'all' || hoaDon.thang.toString() === monthFilter;
+  const matchesYear = yearFilter === 'all' || hoaDon.nam.toString() === yearFilter;
+  return matchesMonth && matchesYear;
+});
 
+const doanhThu = doanhThuHoaDon.reduce((sum, h) => sum + h.daThanhToan, 0);
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'chuaThanhToan':
@@ -651,17 +657,48 @@ export default function HoaDonPage() {
           </div>
         </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-green-600">Doanh thu</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(hoaDonList.reduce((sum, h) => sum + h.daThanhToan, 0))}</p>
-            </div>
-            <div className="bg-green-100 p-2 rounded-lg">
-              <Receipt className="h-5 w-5 text-green-600" />
-            </div>
-          </div>
-        </Card>
+       <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
+  <div className="flex items-center justify-between">
+    <div className="flex-1">
+      <p className="text-xs font-medium text-green-600">Doanh thu</p>
+
+      <div className="flex items-center gap-1.5 mt-1.5 mb-1">
+        <Select value={monthFilter} onValueChange={setMonthFilter}>
+          <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
+            <SelectValue placeholder="Tháng" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
+            {getMonthOptions().map(month => (
+              <SelectItem key={month} value={month.toString()} className="text-xs">
+                Tháng {month}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={yearFilter} onValueChange={setYearFilter}>
+          <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
+            <SelectValue placeholder="Năm" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
+            {getYearOptions().map(year => (
+              <SelectItem key={year} value={year.toString()} className="text-xs">
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(doanhThu)}</p>
+    </div>
+    <div className="bg-green-100 p-2 rounded-lg">
+      <Receipt className="h-5 w-5 text-green-600" />
+    </div>
+  </div>
+</Card>
       </div>
 
       {/* Desktop Table */}

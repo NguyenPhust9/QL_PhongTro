@@ -39,6 +39,31 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+const ddmmyyyyToIso = (value: string) => {
+  const parts = value.split('/');
+  if (parts.length !== 3) return '';
+  const [dd, mm, yyyy] = parts;
+  if (dd?.length === 2 && mm?.length === 2 && yyyy?.length === 4) {
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return '';
+};
+
+// Chuyển "yyyy-mm-dd" -> "dd/mm/yyyy"
+const isoToDdmmyyyy = (iso: string) => {
+  if (!iso) return '';
+  const [yyyy, mm, dd] = iso.split('-');
+  if (yyyy && mm && dd) return `${dd}/${mm}/${yyyy}`;
+  return '';
+};
+
+// Tự động chèn dấu "/" khi gõ số
+const formatDateTyping = (raw: string) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+};
 export default function ThemMoiHopDongPage() {
   const router = useRouter();
   const [phongList, setPhongList] = useState<Phong[]>([]);
@@ -95,7 +120,8 @@ export default function ThemMoiHopDongPage() {
   });
 
   const [newPhiDichVu, setNewPhiDichVu] = useState({ ten: '', gia: 0 });
-  const [openPhong, setOpenPhong] = useState(false);
+  const [ngayBatDauDisplay, setNgayBatDauDisplay] = useState(isoToDdmmyyyy(formData.ngayBatDau));
+  const [ngayKetThucDisplay, setNgayKetThucDisplay] = useState(isoToDdmmyyyy(formData.ngayKetThuc));  const [openPhong, setOpenPhong] = useState(false);
   const [openKhachThue, setOpenKhachThue] = useState(false);
   const [openNguoiDaiDien, setOpenNguoiDaiDien] = useState(false);
 
@@ -182,13 +208,14 @@ export default function ThemMoiHopDongPage() {
     return end.toISOString().split('T')[0];
   };
 
-  const setQuickDuration = (months: number) => {
+ const setQuickDuration = (months: number) => {
     if (formData.ngayBatDau) {
       const endDate = calculateEndDate(formData.ngayBatDau, months);
       setFormData(prev => ({
         ...prev,
         ngayKetThuc: endDate
       }));
+      setNgayKetThucDisplay(isoToDdmmyyyy(endDate));
     }
   };
 
@@ -448,25 +475,39 @@ export default function ThemMoiHopDongPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              <div className="space-y-2">
+             <div className="space-y-2">
                 <Label htmlFor="ngayBatDau" className="text-xs md:text-sm">Ngày bắt đầu</Label>
                 <Input
                   id="ngayBatDau"
-                  type="date"
-                  value={formData.ngayBatDau}
-                  onChange={(e) => setFormData(prev => ({ ...prev, ngayBatDau: e.target.value }))}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="dd/mm/yyyy"
+                  value={ngayBatDauDisplay}
+                  onChange={(e) => {
+                    const formatted = formatDateTyping(e.target.value);
+                    setNgayBatDauDisplay(formatted);
+                    setFormData(prev => ({ ...prev, ngayBatDau: ddmmyyyyToIso(formatted) }));
+                  }}
+                  maxLength={10}
                   required
                   className="text-sm"
                 />
               </div>
               
-              <div className="space-y-2">
+             <div className="space-y-2">
                 <Label htmlFor="ngayKetThuc" className="text-xs md:text-sm">Ngày kết thúc</Label>
                 <Input
                   id="ngayKetThuc"
-                  type="date"
-                  value={formData.ngayKetThuc}
-                  onChange={(e) => setFormData(prev => ({ ...prev, ngayKetThuc: e.target.value }))}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="dd/mm/yyyy"
+                  value={ngayKetThucDisplay}
+                  onChange={(e) => {
+                    const formatted = formatDateTyping(e.target.value);
+                    setNgayKetThucDisplay(formatted);
+                    setFormData(prev => ({ ...prev, ngayKetThuc: ddmmyyyyToIso(formatted) }));
+                  }}
+                  maxLength={10}
                   required
                   className="text-sm"
                 />

@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
       chiSoNuocBanDau,
       chiSoNuocCuoiKy,
       phiDichVu,
+      daThanhToan,
       ghiChu
     } = body;
 
@@ -228,23 +229,27 @@ export async function POST(request: NextRequest) {
     let chiSoNuocBanDauValue = chiSoNuocBanDau;
     let chiSoNuocCuoiKyValue = chiSoNuocCuoiKy;
 
-    // Tìm hóa đơn gần nhất để lấy chỉ số cuối kỳ
-    const lastHoaDon = await HoaDon.findOne({
-      hopDong: hopDong,
-      $or: [
-        { nam: { $lt: nam } },
-        { nam: nam, thang: { $lt: thang } }
-      ]
-    }).sort({ nam: -1, thang: -1 });
+    // Chỉ tự động tra cứu chỉ số ban đầu nếu frontend KHÔNG gửi lên
+    // (tránh ghi đè giá trị người dùng đã xem/nhập trên form)
+    if (chiSoDienBanDauValue === undefined || chiSoDienBanDauValue === null) {
+      // Tìm hóa đơn gần nhất để lấy chỉ số cuối kỳ
+      const lastHoaDon = await HoaDon.findOne({
+        hopDong: hopDong,
+        $or: [
+          { nam: { $lt: nam } },
+          { nam: nam, thang: { $lt: thang } }
+        ]
+      }).sort({ nam: -1, thang: -1 });
 
-    if (lastHoaDon) {
-      // Hóa đơn tiếp theo: lấy chỉ số cuối kỳ từ hóa đơn trước
-      chiSoDienBanDauValue = lastHoaDon.chiSoDienCuoiKy;
-      chiSoNuocBanDauValue = lastHoaDon.chiSoNuocCuoiKy;
-    } else {
-      // Hóa đơn đầu tiên: lấy chỉ số ban đầu từ hợp đồng
-      chiSoDienBanDauValue = hopDongData.chiSoDienBanDau;
-      chiSoNuocBanDauValue = hopDongData.chiSoNuocBanDau;
+      if (lastHoaDon) {
+        // Hóa đơn tiếp theo: lấy chỉ số cuối kỳ từ hóa đơn trước
+        chiSoDienBanDauValue = lastHoaDon.chiSoDienCuoiKy;
+        chiSoNuocBanDauValue = lastHoaDon.chiSoNuocCuoiKy;
+      } else {
+        // Hóa đơn đầu tiên: lấy chỉ số ban đầu từ hợp đồng
+        chiSoDienBanDauValue = hopDongData.chiSoDienBanDau;
+        chiSoNuocBanDauValue = hopDongData.chiSoNuocBanDau;
+      }
     }
 
     // Nếu không có chỉ số cuối kỳ từ form, sử dụng chỉ số ban đầu
@@ -264,6 +269,7 @@ export async function POST(request: NextRequest) {
     const tienNuocTinh = soNuoc * hopDongData.giaNuoc;
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
+    const daThanhToanValue = daThanhToan || 0;
 
     hoaDonData = {
       ...hoaDonData,
@@ -280,8 +286,8 @@ export async function POST(request: NextRequest) {
       chiSoNuocCuoiKy: chiSoNuocCuoiKyValue,
       phiDichVu: phiDichVu || [],
       tongTien,
-      daThanhToan: 0,
-      conLai: tongTien,
+      daThanhToan: daThanhToanValue,
+      conLai: tongTien - daThanhToanValue,
       trangThai: 'chuaThanhToan',
       hanThanhToan: new Date(nam, thang - 1, hopDongData.ngayThanhToan) // Hạn thanh toán theo ngày quy định trong hợp đồng
     };
