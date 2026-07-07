@@ -72,7 +72,16 @@ export default function ThanhToanPage() {
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
-const [yearFilter, setYearFilter] = useState<string>('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
+
+  // Bộ lọc riêng cho thẻ "Tiền cò (80%)"
+  const [tienCoMonthFilter, setTienCoMonthFilter] = useState<string>('all');
+  const [tienCoYearFilter, setTienCoYearFilter] = useState<string>('all');
+
+  // Bộ lọc riêng cho thẻ "Tiền thực tế (20%)"
+  const [tienTTMonthFilter, setTienTTMonthFilter] = useState<string>('all');
+  const [tienTTYearFilter, setTienTTYearFilter] = useState<string>('all');
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingThanhToan, setEditingThanhToan] = useState<ThanhToanPopulated | null>(null);
 
@@ -156,12 +165,43 @@ setHoaDonList(hoaDons);
     
     return matchesSearch && matchesMethod && matchesDate;
   });
+
 const doanhThuThanhToan = thanhToanList.filter(thanhToan => {
   const ngay = new Date(thanhToan.ngayThanhToan);
   const matchesMonth = monthFilter === 'all' || (ngay.getMonth() + 1).toString() === monthFilter;
   const matchesYear = yearFilter === 'all' || ngay.getFullYear().toString() === yearFilter;
   return matchesMonth && matchesYear;
 });
+
+// Danh sách lọc riêng cho thẻ "Tiền cò (80%)"
+const doanhThuTienCo = thanhToanList.filter(thanhToan => {
+  const ngay = new Date(thanhToan.ngayThanhToan);
+  const matchesMonth = tienCoMonthFilter === 'all' || (ngay.getMonth() + 1).toString() === tienCoMonthFilter;
+  const matchesYear = tienCoYearFilter === 'all' || ngay.getFullYear().toString() === tienCoYearFilter;
+  return matchesMonth && matchesYear;
+});
+
+// Danh sách lọc riêng cho thẻ "Tiền thực tế (20%)"
+const doanhThuTienTT = thanhToanList.filter(thanhToan => {
+  const ngay = new Date(thanhToan.ngayThanhToan);
+  const matchesMonth = tienTTMonthFilter === 'all' || (ngay.getMonth() + 1).toString() === tienTTMonthFilter;
+  const matchesYear = tienTTYearFilter === 'all' || ngay.getFullYear().toString() === tienTTYearFilter;
+  return matchesMonth && matchesYear;
+});
+
+const tongTienCo = doanhThuTienCo.reduce((sum, t) => {
+  const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
+  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+  const giaThue = phongInfo?.giaThue || 0;
+  return sum + giaThue * 0.8;
+}, 0);
+
+const tongTienThucTe = doanhThuTienTT.reduce((sum, t) => {
+  const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
+  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+  const giaThue = phongInfo?.giaThue || 0;
+  return sum + giaThue * 0.2;
+}, 0);
 
 const tongTienTheoThang = doanhThuThanhToan.reduce((sum, t) => sum + t.soTien, 0);
   const getMethodBadge = (method: string) => {
@@ -346,24 +386,86 @@ const getYearOptions = () => {
 
         <Card className="p-4 bg-gradient-to-br from-green-50 to-white border border-green-100 hover:shadow-md">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-green-600">Tiền mặt</p>
-              <p className="text-2xl font-bold text-green-700 mt-1">{thanhToanList.filter(t => t.phuongThuc === 'tienMat').length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-green-600">Tiền cò (80%)</p>
+
+              <div className="flex items-center gap-1.5 mt-1.5 mb-1">
+                <Select value={tienCoMonthFilter} onValueChange={setTienCoMonthFilter}>
+                  <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
+                    <SelectValue placeholder="Tháng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
+                    {getMonthOptions().map(month => (
+                      <SelectItem key={month} value={month.toString()} className="text-xs">
+                        Tháng {month}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={tienCoYearFilter} onValueChange={setTienCoYearFilter}>
+                  <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
+                    <SelectValue placeholder="Năm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
+                    {getYearOptions().map(year => (
+                      <SelectItem key={year} value={year.toString()} className="text-xs">
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <p className="text-2xl font-bold text-green-700 mt-1">{formatCurrency(tongTienCo)}</p>
             </div>
             <div className="bg-green-100 p-2 rounded-lg">
-              <CreditCard className="h-5 w-5 text-green-600" />
+              <CreditCard className="h-5 w-5 text-green-600 flex-shrink-0" />
             </div>
           </div>
         </Card>
 
         <Card className="p-4 bg-gradient-to-br from-blue-50 to-white border border-blue-100 hover:shadow-md">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-blue-600">Chuyển khoản</p>
-              <p className="text-2xl font-bold text-blue-700 mt-1">{thanhToanList.filter(t => t.phuongThuc === 'chuyenKhoan').length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-blue-600">Tiền thực tế (20%)</p>
+
+              <div className="flex items-center gap-1.5 mt-1.5 mb-1">
+                <Select value={tienTTMonthFilter} onValueChange={setTienTTMonthFilter}>
+                  <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
+                    <SelectValue placeholder="Tháng" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
+                    {getMonthOptions().map(month => (
+                      <SelectItem key={month} value={month.toString()} className="text-xs">
+                        Tháng {month}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={tienTTYearFilter} onValueChange={setTienTTYearFilter}>
+                  <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
+                    <SelectValue placeholder="Năm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
+                    {getYearOptions().map(year => (
+                      <SelectItem key={year} value={year.toString()} className="text-xs">
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <p className="text-2xl font-bold text-blue-700 mt-1">{formatCurrency(tongTienThucTe)}</p>
             </div>
             <div className="bg-blue-100 p-2 rounded-lg">
-              <CreditCard className="h-5 w-5 text-blue-600" />
+              <CreditCard className="h-5 w-5 text-blue-600 flex-shrink-0" />
             </div>
           </div>
         </Card>

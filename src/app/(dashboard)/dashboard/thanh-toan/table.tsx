@@ -265,31 +265,33 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     ),
   },
   {
-    id: "tienCo",
-    header: () => <div className="text-right">Tiền cò (80%)</div>,
-    cell: ({ row }) => {
-      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-      const tongTien = hoaDonInfo?.tongTien || 0;
-      return (
-        <div className="text-right text-sm">
-          {formatCurrency(tongTien * 0.8)}
-        </div>
-      );
-    },
+  id: "tienCo",
+  header: () => <div className="text-right">Tiền cò (80%)</div>,
+  cell: ({ row }) => {
+    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+    const giaThue = phongInfo?.giaThue || 0;
+    return (
+      <div className="text-right text-sm">
+        {formatCurrency(giaThue * 0.8)}
+      </div>
+    );
   },
-  {
-    id: "tienThucTe",
-    header: () => <div className="text-right">Tiền thực tế (20%)</div>,
-    cell: ({ row }) => {
-      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-      const tongTien = hoaDonInfo?.tongTien || 0;
-      return (
-        <div className="text-right text-sm">
-          {formatCurrency(tongTien * 0.2)}
-        </div>
-      );
-    },
+},
+{
+  id: "tienThucTe",
+  header: () => <div className="text-right">Tiền thực tế (20%)</div>,
+  cell: ({ row }) => {
+    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+    const giaThue = phongInfo?.giaThue || 0;
+    return (
+      <div className="text-right text-sm">
+        {formatCurrency(giaThue * 0.2)}
+      </div>
+    );
   },
+},
   {
     accessorKey: "phuongThuc",
     header: "Phương thức",

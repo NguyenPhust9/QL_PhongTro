@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         path: 'hoaDon',
         select: 'maHoaDon thang nam tongTien phong khachThue',
         populate: [
-        { path: 'phong', select: 'maPhong tienCoc' },
+        { path: 'phong', select: 'maPhong tienCoc giaThue' },
         { path: 'khachThue', select: 'hoTen' }
         ]
       })
