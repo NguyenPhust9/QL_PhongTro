@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
     // Get active contracts (simplified - no populate first)
     console.log('Fetching hopDongList...');
     const hopDongList = await HopDong.find({
-      trangThai: 'hoatDong',
+     trangThai: 'hoatDong',
     })
-      .select('maHopDong phong nguoiDaiDien giaThue giaDien giaNuoc phiDichVu ngayThanhToan trangThai chiSoDienBanDau chiSoNuocBanDau ngayBatDau ngayKetThuc')
-      .sort({ maHopDong: 1 });
+    .select('maHopDong phong nguoiDaiDien khachThueId giaThue giaDien giaNuoc phiDichVu ngayThanhToan trangThai chiSoDienBanDau chiSoNuocBanDau ngayBatDau ngayKetThuc')
+    .sort({ maHopDong: 1 });
     console.log('Fetched hopDongList:', hopDongList.length);
 
     return NextResponse.json({

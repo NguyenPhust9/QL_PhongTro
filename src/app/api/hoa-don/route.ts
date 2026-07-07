@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import HoaDon from '@/models/HoaDon';
 import HopDong from '@/models/HopDong';
-import KhachThue from '@/models/KhachThue'; // 👈 thêm dòng này
+import KhachThue from '@/models/KhachThue';
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PhiDichVu } from '@/types';
-
+import { DON_GIA_NUOC_THEO_NGUOI } from '@/lib/constants';
 // GET - Lấy danh sách hóa đơn
 export async function GET(request: NextRequest) {
   try {
@@ -30,8 +30,9 @@ export async function GET(request: NextRequest) {
       const hoaDon = await HoaDon.findById(id)
         .populate('hopDong', 'maHopDong')
         .populate('phong', 'maPhong')
-        .populate('khachThue', 'hoTen soDienThoai');
-      
+        .populate('khachThue', 'hoTen soDienThoai')
+        .lean();
+
       if (!hoaDon) {
         return NextResponse.json(
           { message: 'Hóa đơn không tồn tại' },
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const hoaDonObj = hoaDon.toObject();
-      
+      const hoaDonObj: any = hoaDon;
+
       // Xử lý dữ liệu cũ không có chỉ số điện nước
       if (hoaDonObj.chiSoDienBanDau === undefined) {
         hoaDonObj.chiSoDienBanDau = 0;
@@ -71,19 +72,23 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const hoaDons = await HoaDon.find(query)
-      .populate('hopDong', 'maHopDong')
-      .populate('phong', 'maPhong')
-      .populate('khachThue', 'hoTen soDienThoai')
-      .sort({ nam: -1, thang: -1 })
-      .skip(skip)
-      .limit(limit);
+    // Chạy find() và countDocuments() song song thay vì tuần tự (trước đây mất thêm 1 round-trip DB)
+    // .lean() bỏ overhead của Mongoose document -> nhanh hơn đáng kể, đặc biệt khi limit lớn
+    const [hoaDons, total] = await Promise.all([
+      HoaDon.find(query)
+        .populate('hopDong', 'maHopDong')
+        .populate('phong', 'maPhong')
+        .populate('khachThue', 'hoTen soDienThoai')
+        .sort({ nam: -1, thang: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      HoaDon.countDocuments(query),
+    ]);
 
     // Xử lý dữ liệu cũ không có chỉ số điện nước
-    const processedHoaDons = hoaDons.map(hoaDon => {
-      const hoaDonObj = hoaDon.toObject();
-      
-      // Nếu không có chỉ số điện nước, tạo giá trị mặc định
+    // (dùng lean() nên hoaDon đã là plain object, không cần .toObject() nữa)
+    const processedHoaDons = hoaDons.map((hoaDonObj: any) => {
       if (hoaDonObj.chiSoDienBanDau === undefined) {
         hoaDonObj.chiSoDienBanDau = 0;
       }
@@ -96,11 +101,8 @@ export async function GET(request: NextRequest) {
       if (hoaDonObj.chiSoNuocCuoiKy === undefined) {
         hoaDonObj.chiSoNuocCuoiKy = hoaDonObj.chiSoNuocBanDau;
       }
-      
       return hoaDonObj;
     });
-
-    const total = await HoaDon.countDocuments(query);
 
     return NextResponse.json({
       success: true,
@@ -144,10 +146,10 @@ export async function POST(request: NextRequest) {
       chiSoNuocCuoiKy,
       phiDichVu,
       daThanhToan,
-      ghiChu
+      ghiChu,
+      
     } = body;
 
-    // Validate required fields
     if (!hopDong) {
       return NextResponse.json(
         { message: 'Thiếu thông tin bắt buộc' },
@@ -155,11 +157,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Kiểm tra hợp đồng tồn tại
     const hopDongData = await HopDong.findById(hopDong)
       .populate('phong')
       .populate('khachThueId');
-    
+
     if (!hopDongData) {
       return NextResponse.json(
         { message: 'Hợp đồng không tồn tại' },
@@ -167,29 +168,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Tạo mã hóa đơn (sử dụng mã từ frontend hoặc tự sinh)
     let finalMaHoaDon = maHoaDon;
-    
+
     if (!finalMaHoaDon || finalMaHoaDon.trim() === '') {
       const currentDate = new Date();
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       const day = String(currentDate.getDate()).padStart(2, '0');
       const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      
+
       finalMaHoaDon = `HD${year}${month}${day}${randomNum}`;
     }
 
-    // Kiểm tra mã hóa đơn đã tồn tại chưa
     const existingHoaDon = await HoaDon.findOne({ maHoaDon: finalMaHoaDon });
     if (existingHoaDon) {
-      // Nếu mã từ frontend bị trùng, tự sinh mã mới
       const currentDate = new Date();
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       const day = String(currentDate.getDate()).padStart(2, '0');
       const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      
+
       finalMaHoaDon = `HD${year}${month}${day}${randomNum}`;
     }
 
@@ -201,7 +199,6 @@ export async function POST(request: NextRequest) {
       ghiChu
     };
 
-    // Hóa đơn hàng tháng
     if (!thang || !nam || tienPhong === undefined) {
       return NextResponse.json(
         { message: 'Thiếu thông tin cho hóa đơn hàng tháng' },
@@ -209,13 +206,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Kiểm tra hóa đơn tháng này đã tồn tại chưa
     const existingMonthlyHoaDon = await HoaDon.findOne({
       hopDong: hopDong,
       thang,
       nam
     });
-    
+
     if (existingMonthlyHoaDon) {
       return NextResponse.json(
         { message: `Hóa đơn tháng ${thang}/${nam} đã tồn tại` },
@@ -223,16 +219,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Tự động tính chỉ số điện nước
     let chiSoDienBanDauValue = chiSoDienBanDau;
     let chiSoDienCuoiKyValue = chiSoDienCuoiKy;
     let chiSoNuocBanDauValue = chiSoNuocBanDau;
     let chiSoNuocCuoiKyValue = chiSoNuocCuoiKy;
 
-    // Chỉ tự động tra cứu chỉ số ban đầu nếu frontend KHÔNG gửi lên
-    // (tránh ghi đè giá trị người dùng đã xem/nhập trên form)
     if (chiSoDienBanDauValue === undefined || chiSoDienBanDauValue === null) {
-      // Tìm hóa đơn gần nhất để lấy chỉ số cuối kỳ
       const lastHoaDon = await HoaDon.findOne({
         hopDong: hopDong,
         $or: [
@@ -242,17 +234,14 @@ export async function POST(request: NextRequest) {
       }).sort({ nam: -1, thang: -1 });
 
       if (lastHoaDon) {
-        // Hóa đơn tiếp theo: lấy chỉ số cuối kỳ từ hóa đơn trước
         chiSoDienBanDauValue = lastHoaDon.chiSoDienCuoiKy;
         chiSoNuocBanDauValue = lastHoaDon.chiSoNuocCuoiKy;
       } else {
-        // Hóa đơn đầu tiên: lấy chỉ số ban đầu từ hợp đồng
         chiSoDienBanDauValue = hopDongData.chiSoDienBanDau;
         chiSoNuocBanDauValue = hopDongData.chiSoNuocBanDau;
       }
     }
 
-    // Nếu không có chỉ số cuối kỳ từ form, sử dụng chỉ số ban đầu
     if (!chiSoDienCuoiKyValue) {
       chiSoDienCuoiKyValue = chiSoDienBanDauValue;
     }
@@ -260,13 +249,14 @@ export async function POST(request: NextRequest) {
       chiSoNuocCuoiKyValue = chiSoNuocBanDauValue;
     }
 
-    // Tính số điện nước
-    const soDien = chiSoDienCuoiKyValue - chiSoDienBanDauValue;
-    const soNuoc = chiSoNuocCuoiKyValue - chiSoNuocBanDauValue;
+   const soDien = chiSoDienCuoiKyValue - chiSoDienBanDauValue;
+  const soNuoc = chiSoNuocCuoiKyValue - chiSoNuocBanDauValue; // giữ lại để tham khảo, không dùng tính tiền
 
-    // Tính tiền điện nước
-    const tienDienTinh = soDien * hopDongData.giaDien;
-    const tienNuocTinh = soNuoc * hopDongData.giaNuoc;
+  const tienDienTinh = soDien * hopDongData.giaDien;
+
+// Tính tiền nước theo số người ở (thay cho tính theo chỉ số nước)
+  const soNguoiO = hopDongData.khachThueId?.length || 0;
+  const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
     const daThanhToanValue = daThanhToan || 0;
@@ -289,13 +279,12 @@ export async function POST(request: NextRequest) {
       daThanhToan: daThanhToanValue,
       conLai: tongTien - daThanhToanValue,
       trangThai: 'chuaThanhToan',
-      hanThanhToan: new Date(nam, thang - 1, hopDongData.ngayThanhToan) // Hạn thanh toán theo ngày quy định trong hợp đồng
+      hanThanhToan: new Date(nam, thang - 1, hopDongData.ngayThanhToan)
     };
 
     const hoaDon = new HoaDon(hoaDonData);
     await hoaDon.save();
 
-    // Populate để trả về dữ liệu đầy đủ
     await hoaDon.populate([
       { path: 'hopDong', select: 'maHopDong' },
       { path: 'phong', select: 'maPhong' },
@@ -319,19 +308,14 @@ export async function POST(request: NextRequest) {
 // PUT - Cập nhật hóa đơn
 export async function PUT(request: NextRequest) {
   try {
-    console.log('PUT request received for hoa-don');
-    
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.log('Unauthorized request');
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
-    console.log('Database connected');
 
     const body = await request.json();
-    console.log('Request body:', body);
     const {
       id,
       maHoaDon,
@@ -350,49 +334,44 @@ export async function PUT(request: NextRequest) {
       ghiChu
     } = body;
 
-    // Validate required fields
     if (!id) {
-      console.log('Missing ID');
       return NextResponse.json(
         { message: 'Thiếu ID hóa đơn' },
         { status: 400 }
       );
     }
 
-    // Kiểm tra hóa đơn tồn tại
-    console.log('Looking for hoa don with ID:', id);
-    const existingHoaDon = await HoaDon.findById(id);
+    // Kiểm tra hóa đơn tồn tại + hợp đồng song song thay vì tuần tự
+    const [existingHoaDon, hopDongData] = await Promise.all([
+      HoaDon.findById(id),
+      HopDong.findById(hopDong),
+    ]);
+
     if (!existingHoaDon) {
-      console.log('Hoa don not found');
       return NextResponse.json(
         { message: 'Hóa đơn không tồn tại' },
         { status: 404 }
       );
     }
 
-    // Kiểm tra hợp đồng tồn tại
-    console.log('Looking for hop dong with ID:', hopDong);
-    const hopDongData = await HopDong.findById(hopDong);
     if (!hopDongData) {
-      console.log('Hop dong not found');
       return NextResponse.json(
         { message: 'Hợp đồng không tồn tại' },
         { status: 404 }
       );
     }
 
-    // Tính số điện nước
-    const soDien = chiSoDienCuoiKy - chiSoDienBanDau;
-    const soNuoc = chiSoNuocCuoiKy - chiSoNuocBanDau;
+  const soDien = chiSoDienCuoiKy - chiSoDienBanDau;
+  const soNuoc = chiSoNuocCuoiKy - chiSoNuocBanDau; // giữ lại để tham khảo
 
-    // Tính tiền điện nước
-    const tienDienTinh = soDien * hopDongData.giaDien;
-    const tienNuocTinh = soNuoc * hopDongData.giaNuoc;
+  const tienDienTinh = soDien * hopDongData.giaDien;
+
+  const soNguoiO = hopDongData.khachThueId?.length || 0;
+  const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;  
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
     const conLai = tongTien - daThanhToan;
 
-    // Cập nhật hóa đơn
     const updatedHoaDon = await HoaDon.findByIdAndUpdate(
       id,
       {
@@ -431,10 +410,6 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating hoa don:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
     return NextResponse.json(
       { message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

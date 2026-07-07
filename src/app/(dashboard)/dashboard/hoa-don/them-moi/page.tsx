@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { HopDong, Phong, KhachThue } from '@/types';
 import { toast } from 'sonner';
+import { DON_GIA_NUOC_THEO_NGUOI } from '@/lib/constants';
 
 // Helper functions
 const getPhongName = (phongId: string | Phong, phongList: Phong[]) => {
@@ -51,6 +52,7 @@ const getKhachThueName = (khachThueId: string | KhachThue, khachThueList: KhachT
   }
   return 'N/A';
 };
+
 // Chuyển "dd/mm/yyyy" -> "yyyy-mm-dd"
 const ddmmyyyyToIso = (value: string) => {
   const parts = value.split('/');
@@ -77,6 +79,7 @@ const formatDateTyping = (raw: string) => {
   if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 };
+
 export default function ThemMoiHoaDonPage() {
   const router = useRouter();
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
@@ -97,10 +100,10 @@ export default function ThemMoiHoaDonPage() {
     soDien: 0,
     chiSoDienBanDau: 0,
     chiSoDienCuoiKy: 0,
+
     tienNuoc: 0,
-    soNuoc: 0,
-    chiSoNuocBanDau: 0,
-    chiSoNuocCuoiKy: 0,
+    soNguoiO: 0, // Số người tính tiền nước (tự nhập, có gợi ý mặc định từ hợp đồng)
+
     phiDichVu: [] as Array<{ten: string, gia: number}>,
     tongTien: 0,
     daThanhToan: 0,
@@ -126,7 +129,6 @@ export default function ThemMoiHoaDonPage() {
 
   const [readingSource, setReadingSource] = useState<{
     chiSoDienBanDau: number;
-    chiSoNuocBanDau: number;
     isFirstInvoice: boolean;
     lastInvoiceMonth: string | null;
   } | null>(null);
@@ -166,7 +168,6 @@ export default function ThemMoiHoaDonPage() {
           setFormData(prev => ({
             ...prev,
             chiSoDienBanDau: data.data.chiSoDienBanDau || 0,
-            chiSoNuocBanDau: data.data.chiSoNuocBanDau || 0,
           }));
           setReadingSource(data.data);
         }
@@ -190,7 +191,8 @@ export default function ThemMoiHoaDonPage() {
           tienPhong: selectedHopDong.giaThue,
           phiDichVu: selectedHopDong.phiDichVu || [],
           chiSoDienBanDau: 0,
-          chiSoNuocBanDau: 0,
+          // Gợi ý mặc định số người ở theo hợp đồng, người dùng vẫn có thể tự sửa
+          soNguoiO: (selectedHopDong as any)?.khachThueId?.length || 0,
         }));
         
         fetchLatestElectricityReading(formData.hopDong, formData.thang, formData.nam);
@@ -209,14 +211,14 @@ export default function ThemMoiHoaDonPage() {
     const totalPhiDichVu = formData.phiDichVu.reduce((sum: number, phi) => sum + phi.gia, 0);
     
     const soDien = formData.chiSoDienCuoiKy - formData.chiSoDienBanDau;
-    const soNuoc = formData.chiSoNuocCuoiKy - formData.chiSoNuocBanDau;
     
     const selectedHopDong = hopDongList.find(hd => hd._id === formData.hopDong);
     const giaDien = selectedHopDong?.giaDien || 0;
-    const giaNuoc = selectedHopDong?.giaNuoc || 0;
     
     const tienDienTinh = soDien * giaDien;
-    const tienNuocTinh = soNuoc * giaNuoc;
+
+    // Tính tiền nước theo số người TỰ NHẬP (formData.soNguoiO)
+    const tienNuocTinh = formData.soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
     
     const total = formData.tienPhong + tienDienTinh + tienNuocTinh + totalPhiDichVu;
     const conLai = total - formData.daThanhToan;
@@ -224,7 +226,6 @@ export default function ThemMoiHoaDonPage() {
     setFormData(prev => ({
       ...prev,
       soDien: Math.max(0, soDien),
-      soNuoc: Math.max(0, soNuoc),
       tienDien: tienDienTinh,
       tienNuoc: tienNuocTinh,
       tongTien: total,
@@ -234,7 +235,7 @@ export default function ThemMoiHoaDonPage() {
 
   useEffect(() => {
     calculateTotal();
-  }, [formData.tienPhong, formData.chiSoDienBanDau, formData.chiSoDienCuoiKy, formData.chiSoNuocBanDau, formData.chiSoNuocCuoiKy, formData.phiDichVu, formData.daThanhToan, formData.hopDong, hopDongList]);
+  }, [formData.tienPhong, formData.chiSoDienBanDau, formData.chiSoDienCuoiKy, formData.phiDichVu, formData.daThanhToan, formData.hopDong, formData.soNguoiO, hopDongList]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,19 +245,14 @@ export default function ThemMoiHoaDonPage() {
       toast.error('Chỉ số điện không được âm');
       return;
     }
-    
-    if (formData.chiSoNuocBanDau < 0 || formData.chiSoNuocCuoiKy < 0) {
-      toast.error('Chỉ số nước không được âm');
-      return;
-    }
-    
+
     if (formData.chiSoDienCuoiKy < formData.chiSoDienBanDau) {
       toast.error('Chỉ số điện cuối kỳ phải lớn hơn hoặc bằng chỉ số ban đầu');
       return;
     }
-    
-    if (formData.chiSoNuocCuoiKy < formData.chiSoNuocBanDau) {
-      toast.error('Chỉ số nước cuối kỳ phải lớn hơn hoặc bằng chỉ số ban đầu');
+
+    if (formData.soNguoiO < 0) {
+      toast.error('Số người tính tiền nước không được âm');
       return;
     }
     
@@ -592,7 +588,7 @@ export default function ThemMoiHoaDonPage() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse border border-gray-200 rounded-lg">
                     <thead>
@@ -685,8 +681,8 @@ export default function ThemMoiHoaDonPage() {
                           </div>
                         </td>
                       </tr>
-                      
-                      {/* Nước */}
+
+                      {/* Nước - tính theo số người, không dùng chỉ số công tơ */}
                       <tr>
                         <td className="border border-gray-200 px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -694,68 +690,29 @@ export default function ThemMoiHoaDonPage() {
                             <span className="font-medium">Nước</span>
                           </div>
                         </td>
-                        <td className="border border-gray-200 px-4 py-3">
-                          <Input
-                            type="number"
-                            min="0"
-                            value={formData.chiSoNuocBanDau}
-                            onChange={(e) => {
-                              const value = Math.max(0, parseInt(e.target.value) || 0);
-                              setFormData(prev => {
-                                // Nếu chỉ số ban đầu > chỉ số cuối kỳ, cập nhật chỉ số cuối kỳ
-                                const newChiSoCuoiKy = Math.max(prev.chiSoNuocCuoiKy, value);
-                                return { 
-                                  ...prev, 
-                                  chiSoNuocBanDau: value,
-                                  chiSoNuocCuoiKy: newChiSoCuoiKy
-                                };
-                              });
-                            }}
-                            className="h-8 w-20 text-center"
-                            placeholder="0"
-                          />
-                          <span className="text-xs text-gray-500 ml-1">m³</span>
-                        </td>
-                        <td className="border border-gray-200 px-4 py-3">
-                          <Input
-                            type="number"
-                            min="0"
-                            value={formData.chiSoNuocCuoiKy}
-                            onChange={(e) => {
-                              const value = Math.max(0, parseInt(e.target.value) || 0);
-                              // Đảm bảo chỉ số cuối >= chỉ số đầu
-                              const finalValue = Math.max(value, formData.chiSoNuocBanDau);
-                              setFormData(prev => ({ ...prev, chiSoNuocCuoiKy: finalValue }));
-                            }}
-                            className="h-8 w-20 text-center"
-                            placeholder="0"
-                          />
-                          <span className="text-xs text-gray-500 ml-1">m³</span>
-                          {formData.chiSoNuocCuoiKy < formData.chiSoNuocBanDau && (
-                            <div className="text-xs text-red-500 mt-1">⚠️ Phải ≥ chỉ số đầu</div>
-                          )}
-                        </td>
-                        <td className="border border-gray-200 px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            <span className={`font-medium ${
-                              formData.soNuoc < 0 ? 'text-red-600' : 
-                              formData.soNuoc === 0 ? 'text-gray-500' : 
-                              'text-blue-600'
-                            }`}>
-                              {formData.soNuoc}
-                            </span>
-                            <span className="text-xs text-gray-500">m³</span>
-                            {formData.soNuoc < 0 && (
-                              <span className="text-xs text-red-500 ml-1">⚠️</span>
-                            )}
+                        <td className="border border-gray-200 px-4 py-3" colSpan={3}>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="soNguoiO" className="text-sm whitespace-nowrap">Số người:</Label>
+                            <Input
+                              id="soNguoiO"
+                              type="number"
+                              min="0"
+                              value={formData.soNguoiO}
+                              onChange={(e) =>
+                                setFormData(prev => ({ ...prev, soNguoiO: Math.max(0, parseInt(e.target.value) || 0) }))
+                              }
+                              className="h-8 w-20 text-center"
+                              placeholder="0"
+                            />
+                            <span className="text-xs text-gray-500">người</span>
                           </div>
                         </td>
                         <td className="border border-gray-200 px-4 py-3">
                           <div className="flex items-center gap-1">
                             <span className="font-medium">
-                              {hopDongList.find(hd => hd._id === formData.hopDong)?.giaNuoc || 0}
+                              {DON_GIA_NUOC_THEO_NGUOI.toLocaleString('vi-VN')}
                             </span>
-                            <span className="text-xs text-gray-500">VNĐ/m³</span>
+                            <span className="text-xs text-gray-500">VNĐ/người</span>
                           </div>
                         </td>
                         <td className="border border-gray-200 px-4 py-3">

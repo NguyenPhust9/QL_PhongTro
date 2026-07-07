@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import ThanhToan from '@/models/ThanhToan';
 import HoaDon from '@/models/HoaDon';
-import KhachThue from '@/models/KhachThue';   // ✅ thêm dòng này
-import Phong from '@/models/Phong';   
+import '@/models/KhachThue';
+import '@/models/Phong';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
         path: 'hoaDon',
         select: 'maHoaDon thang nam tongTien phong khachThue',
         populate: [
-          { path: 'phong', select: 'maPhong' },
-          { path: 'khachThue', select: 'hoTen' }
+        { path: 'phong', select: 'maPhong tienCoc' },
+        { path: 'khachThue', select: 'hoTen' }
         ]
       })
       .populate('nguoiNhan', 'hoTen email')   

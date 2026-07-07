@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { DON_GIA_NUOC_THEO_NGUOI } from '@/lib/constants';
+
 import { ImageUpload } from '@/components/ui/image-upload';
 import { HoaDonDataTable } from './table';
 import { DeleteConfirmPopover } from '@/components/ui/delete-confirm-popover';
@@ -46,8 +48,8 @@ import {
 } from 'lucide-react';
 import { HoaDon, HopDong, Phong, KhachThue } from '@/types';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+// Đã bỏ import tĩnh html2canvas và jspdf ở đây — chuyển sang dynamic import
+// bên trong handleScreenshot để không làm nặng lần tải trang đầu tiên.
 
 // Helper functions for form and dialogs
 const getPhongName = (phongId: string | Phong, phongList: Phong[]) => {
@@ -136,14 +138,20 @@ export default function HoaDonPage() {
         }
       }
       
-      // Fetch hóa đơn từ API
-      const hoaDonResponse = await fetch('/api/hoa-don?limit=1000');
+      // Gọi song song 2 API thay vì tuần tự (trước đây fetch hóa đơn
+      // xong rồi mới fetch form-data, tổng thời gian chờ = A + B).
+      // Giờ cả 2 chạy cùng lúc, tổng thời gian chờ chỉ còn max(A, B).
+      const [hoaDonResponse, formDataResponse] = await Promise.all([
+        fetch('/api/hoa-don?limit=1000'),
+        fetch('/api/hoa-don/form-data'),
+      ]);
+
+      // Xử lý hóa đơn
       const hoaDonData = hoaDonResponse.ok ? await hoaDonResponse.json() : { data: [] };
       const hoaDons = hoaDonData.data || [];
       setHoaDonList(hoaDons);
 
-      // Fetch form data (hop dong, phong, khach thue) từ API
-      const formDataResponse = await fetch('/api/hoa-don/form-data');
+      // Xử lý form data (hop dong, phong, khach thue)
       if (formDataResponse.ok) {
         const formData = await formDataResponse.json();
         console.log('Form data loaded:', formData.data);
@@ -188,13 +196,15 @@ export default function HoaDonPage() {
     
     return matchesSearch && matchesStatus && matchesMonth && matchesYear;
   });
-const doanhThuHoaDon = hoaDonList.filter(hoaDon => {
-  const matchesMonth = monthFilter === 'all' || hoaDon.thang.toString() === monthFilter;
-  const matchesYear = yearFilter === 'all' || hoaDon.nam.toString() === yearFilter;
-  return matchesMonth && matchesYear;
-});
 
-const doanhThu = doanhThuHoaDon.reduce((sum, h) => sum + h.daThanhToan, 0);
+  const doanhThuHoaDon = hoaDonList.filter(hoaDon => {
+    const matchesMonth = monthFilter === 'all' || hoaDon.thang.toString() === monthFilter;
+    const matchesYear = yearFilter === 'all' || hoaDon.nam.toString() === yearFilter;
+    return matchesMonth && matchesYear;
+  });
+
+  const doanhThu = doanhThuHoaDon.reduce((sum, h) => sum + h.daThanhToan, 0);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'chuaThanhToan':
@@ -395,6 +405,13 @@ const doanhThu = doanhThuHoaDon.reduce((sum, h) => sum + h.daThanhToan, 0);
 
   const handleScreenshot = async (hoaDon: HoaDon) => {
     try {
+      // Chỉ tải html2canvas và jspdf khi thực sự cần xuất PDF,
+      // thay vì tải sẵn ngay lúc mở trang (giúp trang load nhanh hơn).
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
       // Tạo element tạm thời để chụp ảnh
       const tempElement = document.createElement('div');
       tempElement.innerHTML = `
@@ -1127,7 +1144,6 @@ const doanhThu = doanhThuHoaDon.reduce((sum, h) => sum + h.daThanhToan, 0);
     )}
   </DialogContent>
 </Dialog>
-```
 
 
       {/* Payment Dialog */}
@@ -1383,4 +1399,3 @@ function PaymentForm({
     </div>
   );
 }
-

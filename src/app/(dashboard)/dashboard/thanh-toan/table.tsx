@@ -265,24 +265,55 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     ),
   },
   {
+    id: "tienCo",
+    header: () => <div className="text-right">Tiền cò (80%)</div>,
+    cell: ({ row }) => {
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const tongTien = hoaDonInfo?.tongTien || 0;
+      return (
+        <div className="text-right text-sm">
+          {formatCurrency(tongTien * 0.8)}
+        </div>
+      );
+    },
+  },
+  {
+    id: "tienThucTe",
+    header: () => <div className="text-right">Tiền thực tế (20%)</div>,
+    cell: ({ row }) => {
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const tongTien = hoaDonInfo?.tongTien || 0;
+      return (
+        <div className="text-right text-sm">
+          {formatCurrency(tongTien * 0.2)}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "phuongThuc",
     header: "Phương thức",
     cell: ({ row }) => getMethodBadge(row.original.phuongThuc),
   },
-  {
-    accessorKey: "thongTinChuyenKhoan",
-    header: "Thông tin giao dịch",
-    cell: ({ row }) => {
-      const tt = row.original.thongTinChuyenKhoan
-      if (!tt) return <span className="text-muted-foreground">-</span>
-      return (
-        <div className="min-w-32">
-          <div className="text-sm font-medium">{tt.nganHang}</div>
-          <div className="text-xs text-muted-foreground">{tt.soGiaoDich}</div>
-        </div>
-      )
-    },
+ {
+  id: "tienCoc",
+  header: () => <div className="text-right">Tiền cọc</div>,
+  cell: ({ row }) => {
+    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+    const tienCoc = phongInfo?.tienCoc
+
+    if (tienCoc === undefined || tienCoc === null) {
+      return <div className="text-right text-muted-foreground">-</div>
+    }
+
+    return (
+      <div className="text-right text-sm font-medium">
+        {formatCurrency(tienCoc)}
+      </div>
+    )
   },
+},
   {
     accessorKey: "ngayThanhToan",
     header: "Ngày thanh toán",
