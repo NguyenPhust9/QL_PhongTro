@@ -22,7 +22,8 @@ import {
   Droplets,
   Wrench,
   Calculator,
-  RefreshCw
+  RefreshCw,
+  Search
 } from 'lucide-react';
 import { HopDong, Phong, KhachThue } from '@/types';
 import { toast } from 'sonner';
@@ -51,6 +52,16 @@ const getKhachThueName = (khachThueId: string | KhachThue, khachThueList: KhachT
     return khachThue?.hoTen || 'N/A';
   }
   return 'N/A';
+};
+
+// Chuẩn hóa chuỗi để tìm kiếm không phân biệt hoa/thường và dấu tiếng Việt
+const normalizeSearchText = (str: string) => {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd');
 };
 
 // Chuyển "dd/mm/yyyy" -> "yyyy-mm-dd"
@@ -87,6 +98,7 @@ export default function ThemMoiHoaDonPage() {
   const [khachThueList, setKhachThueList] = useState<KhachThue[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [hopDongSearchTerm, setHopDongSearchTerm] = useState('');
 
   const [formData, setFormData] = useState({
     maHoaDon: '',
@@ -312,6 +324,23 @@ export default function ThemMoiHoaDonPage() {
     }));
   };
 
+  // Danh sách hợp đồng đang hoạt động, đã lọc theo từ khóa tìm kiếm (phòng / tên khách / mã HĐ)
+  const activeHopDongList = hopDongList.filter(hd => hd.trangThai === 'hoatDong');
+  const filteredHopDongList = activeHopDongList.filter((hopDong) => {
+    const keyword = normalizeSearchText(hopDongSearchTerm.trim());
+    if (!keyword) return true;
+
+    const phongObj = typeof hopDong.phong === 'object' ? (hopDong.phong as Phong) : null;
+    const phongName = phongObj?.maPhong || getPhongName(hopDong.phong as string, phongList);
+    const nguoiDaiDienName = getKhachThueName(hopDong.nguoiDaiDien, khachThueList);
+
+    return (
+      normalizeSearchText(phongName).includes(keyword) ||
+      normalizeSearchText(nguoiDaiDienName).includes(keyword) ||
+      normalizeSearchText(hopDong.maHopDong || '').includes(keyword)
+    );
+  });
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -409,18 +438,46 @@ export default function ThemMoiHoaDonPage() {
                   <div className="space-y-1">
                     <Label htmlFor="hopDong" className="text-xs md:text-sm">Hợp đồng *</Label>
                     <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mb-1">
-                      {hopDongList.filter(hd => hd.trangThai === 'hoatDong').length} hợp đồng hoạt động
+                      {activeHopDongList.length} hợp đồng hoạt động
                     </div>
-                    <Select value={formData.hopDong} onValueChange={(value) => setFormData(prev => ({ ...prev, hopDong: value }))}>
+                    <Select
+                      value={formData.hopDong}
+                      onValueChange={(value) => {
+                        setFormData(prev => ({ ...prev, hopDong: value }));
+                        setHopDongSearchTerm('');
+                      }}
+                      onOpenChange={(open) => {
+                        if (!open) setHopDongSearchTerm('');
+                      }}
+                    >
                       <SelectTrigger className="h-10 text-sm">
                         <SelectValue placeholder="Chọn hợp đồng" />
                       </SelectTrigger>
                       <SelectContent className="max-w-[500px]">
+                        {/* Ô tìm kiếm nhanh theo phòng / tên khách / mã hợp đồng */}
+                        <div
+                          className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 bg-white p-2 border-b"
+                          onKeyDown={(e) => e.stopPropagation()}
+                        >
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                            <Input
+                              autoFocus
+                              placeholder="Tìm theo phòng, tên khách, mã HĐ..."
+                              value={hopDongSearchTerm}
+                              onChange={(e) => setHopDongSearchTerm(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-8 pl-7 text-sm"
+                            />
+                          </div>
+                        </div>
+
                         {hopDongList.length === 0 ? (
                           <div className="p-2 text-sm text-gray-500">Đang tải hợp đồng...</div>
+                        ) : filteredHopDongList.length === 0 ? (
+                          <div className="p-2 text-sm text-gray-500">Không tìm thấy hợp đồng phù hợp</div>
                         ) : (
-                          hopDongList
-                            .filter(hd => hd.trangThai === 'hoatDong')
+                          filteredHopDongList
                             .map((hopDong) => {
                               const phongObj = typeof hopDong.phong === 'object' ? (hopDong.phong as Phong) : null;
                               const phongName = phongObj?.maPhong || getPhongName(hopDong.phong as string, phongList);
@@ -617,15 +674,7 @@ export default function ThemMoiHoaDonPage() {
                             value={formData.chiSoDienBanDau}
                             onChange={(e) => {
                               const value = Math.max(0, parseInt(e.target.value) || 0);
-                              setFormData(prev => {
-                                // Nếu chỉ số ban đầu > chỉ số cuối kỳ, cập nhật chỉ số cuối kỳ
-                                const newChiSoCuoiKy = Math.max(prev.chiSoDienCuoiKy, value);
-                                return { 
-                                  ...prev, 
-                                  chiSoDienBanDau: value,
-                                  chiSoDienCuoiKy: newChiSoCuoiKy
-                                };
-                              });
+                              setFormData(prev => ({ ...prev, chiSoDienBanDau: value }));
                             }}
                             className="h-8 w-20 text-center"
                             placeholder="0"
@@ -639,9 +688,7 @@ export default function ThemMoiHoaDonPage() {
                             value={formData.chiSoDienCuoiKy}
                             onChange={(e) => {
                               const value = Math.max(0, parseInt(e.target.value) || 0);
-                              // Đảm bảo chỉ số cuối >= chỉ số đầu
-                              const finalValue = Math.max(value, formData.chiSoDienBanDau);
-                              setFormData(prev => ({ ...prev, chiSoDienCuoiKy: finalValue }));
+                              setFormData(prev => ({ ...prev, chiSoDienCuoiKy: value }));
                             }}
                             className="h-8 w-20 text-center"
                             placeholder="0"

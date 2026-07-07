@@ -412,14 +412,36 @@ type ThanhToanDataTableProps = ThanhToanTableProps & {
   data: ThanhToanPopulated[]
   searchTerm?: string
   onSearchChange?: (value: string) => void
+  // Giữ lại để tương thích ngược với các nơi đang truyền props này (không còn dùng để lọc)
   methodFilter?: string
   onMethodChange?: (value: string) => void
   dateFilter?: string
   onDateChange?: (value: string) => void
+  monthFilter?: string
+  onMonthChange?: (value: string) => void
+  yearFilter?: string
+  onYearChange?: (value: string) => void
+}
+
+// Helper tạo danh sách tháng/năm cho bộ lọc
+const getMonthOptions = () => Array.from({ length: 12 }, (_, i) => i + 1)
+
+const getYearOptions = () => {
+  const currentYear = new Date().getFullYear()
+  return Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
 }
 
 export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
-  const { data: initialData, searchTerm, onSearchChange, methodFilter, onMethodChange, dateFilter, onDateChange, ...tableProps } = props
+  const {
+    data: initialData,
+    searchTerm,
+    onSearchChange,
+    monthFilter,
+    onMonthChange,
+    yearFilter,
+    onYearChange,
+    ...tableProps
+  } = props
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -432,12 +454,39 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
     pageIndex: 0,
     pageSize: 10,
   })
-  
+
+  // Giá trị đang chọn trong Select (chưa áp dụng lọc)
+  const [monthSelectValue, setMonthSelectValue] = React.useState(monthFilter || 'all')
+  const [yearSelectValue, setYearSelectValue] = React.useState(yearFilter || 'all')
+  // Giá trị đã được áp dụng (bấm OK) - dùng để lọc bảng thực sự
+  const [appliedMonth, setAppliedMonth] = React.useState(monthFilter || 'all')
+  const [appliedYear, setAppliedYear] = React.useState(yearFilter || 'all')
+
   // Sync data when prop changes
   React.useEffect(() => {
     setData(initialData)
   }, [initialData])
-  
+
+  // Lọc dữ liệu theo tháng/năm (dựa trên ngayThanhToan) trước khi đưa vào bảng
+  // Chỉ áp dụng giá trị đã bấm OK (appliedMonth/appliedYear), không lọc theo giá trị đang chọn dở
+  const filteredByMonthYear = React.useMemo(() => {
+    return data.filter((thanhToan) => {
+      const ngay = new Date(thanhToan.ngayThanhToan)
+      const matchesMonth =
+        !appliedMonth || appliedMonth === 'all' || (ngay.getMonth() + 1).toString() === appliedMonth
+      const matchesYear =
+        !appliedYear || appliedYear === 'all' || ngay.getFullYear().toString() === appliedYear
+      return matchesMonth && matchesYear
+    })
+  }, [data, appliedMonth, appliedYear])
+
+  const handleApplyFilter = () => {
+    setAppliedMonth(monthSelectValue)
+    setAppliedYear(yearSelectValue)
+    onMonthChange?.(monthSelectValue)
+    onYearChange?.(yearSelectValue)
+  }
+
   const columns = React.useMemo(() => createColumns(tableProps), [tableProps])
   
   const sortableId = React.useId()
@@ -448,12 +497,12 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
-    [data]
+    () => filteredByMonthYear?.map(({ _id }) => _id!) || [],
+    [filteredByMonthYear]
   )
 
   const table = useReactTable({
-    data,
+    data: filteredByMonthYear,
     columns,
     state: {
       sorting,
@@ -506,28 +555,40 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
               />
             </div>
           </div>
-          <Select value={methodFilter} onValueChange={onMethodChange}>
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue placeholder="Phương thức" />
+          <Select value={monthSelectValue} onValueChange={setMonthSelectValue}>
+            <SelectTrigger className="w-full sm:w-[120px]">
+              <SelectValue placeholder="Tháng" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="tienMat">Tiền mặt</SelectItem>
-              <SelectItem value="chuyenKhoan">Chuyển khoản</SelectItem>
-              <SelectItem value="viDienTu">Ví điện tử</SelectItem>
+              <SelectItem value="all">Cả năm</SelectItem>
+              {getMonthOptions().map((month) => (
+                <SelectItem key={month} value={month.toString()}>
+                  Tháng {month}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={dateFilter} onValueChange={onDateChange}>
-            <SelectTrigger className="w-full sm:w-[130px]">
-              <SelectValue placeholder="Thời gian" />
+          <Select value={yearSelectValue} onValueChange={setYearSelectValue}>
+            <SelectTrigger className="w-full sm:w-[110px]">
+              <SelectValue placeholder="Năm" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
-              <SelectItem value="today">Hôm nay</SelectItem>
-              <SelectItem value="week">Tuần này</SelectItem>
-              <SelectItem value="month">Tháng này</SelectItem>
+              <SelectItem value="all">Tất cả năm</SelectItem>
+              {getYearOptions().map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="default"
+            size="sm"
+            className="sm:w-auto"
+            onClick={handleApplyFilter}
+          >
+            OK
+          </Button>
         </div>
 
         {/* Tùy chỉnh cột bên phải */}
