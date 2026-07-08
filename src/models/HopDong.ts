@@ -132,10 +132,16 @@ const HopDongSchema = new Schema<IHopDong>({
 
 // Index cho tìm kiếm
 // maHopDong đã có unique: true nên không cần index thủ công
-HopDongSchema.index({ phong: 1 });
-HopDongSchema.index({ trangThai: 1 });
-HopDongSchema.index({ ngayBatDau: 1 });
-HopDongSchema.index({ ngayKetThuc: 1 });
+
+// Compound index: khớp đúng pattern query của GET /api/hop-dong
+// (filter theo trangThai/phong rồi sort theo ngayTao) -> tránh MongoDB phải in-memory sort
+HopDongSchema.index({ trangThai: 1, ngayTao: -1 });
+HopDongSchema.index({ phong: 1, ngayTao: -1 });
+HopDongSchema.index({ ngayTao: -1 }); // fallback khi list không filter gì (chỉ sort)
+
+// Compound index cho check trùng lịch thuê trong POST (query existingHopDong)
+HopDongSchema.index({ phong: 1, trangThai: 1, ngayBatDau: 1, ngayKetThuc: 1 });
+
 HopDongSchema.index({ nguoiDaiDien: 1 });
 
 // Validation: ngày kết thúc phải sau ngày bắt đầu
