@@ -221,9 +221,14 @@ export async function POST(request: NextRequest) {
 
     let chiSoDienBanDauValue = chiSoDienBanDau;
     let chiSoDienCuoiKyValue = chiSoDienCuoiKy;
-    let chiSoNuocBanDauValue = chiSoNuocBanDau;
-    let chiSoNuocCuoiKyValue = chiSoNuocCuoiKy;
 
+    // Nước không còn tính theo chỉ số (đã chuyển sang tính theo số người ở),
+    // nên chiSoNuocBanDau/chiSoNuocCuoiKy chỉ giữ lại cho tương thích dữ liệu cũ,
+    // mặc định về 0 nếu frontend không gửi lên, KHÔNG bắt buộc và KHÔNG lấy từ lastHoaDon.
+    let chiSoNuocBanDauValue = chiSoNuocBanDau ?? 0;
+    let chiSoNuocCuoiKyValue = chiSoNuocCuoiKy ?? 0;
+
+    // Chỉ điện mới cần fallback từ hóa đơn trước / hợp đồng vì vẫn tính tiền theo chỉ số
     if (chiSoDienBanDauValue === undefined || chiSoDienBanDauValue === null) {
       const lastHoaDon = await HoaDon.findOne({
         hopDong: hopDong,
@@ -233,30 +238,37 @@ export async function POST(request: NextRequest) {
         ]
       }).sort({ nam: -1, thang: -1 });
 
-      if (lastHoaDon) {
-        chiSoDienBanDauValue = lastHoaDon.chiSoDienCuoiKy;
-        chiSoNuocBanDauValue = lastHoaDon.chiSoNuocCuoiKy;
-      } else {
-        chiSoDienBanDauValue = hopDongData.chiSoDienBanDau;
-        chiSoNuocBanDauValue = hopDongData.chiSoNuocBanDau;
+      chiSoDienBanDauValue = lastHoaDon
+        ? lastHoaDon.chiSoDienCuoiKy
+        : (hopDongData.chiSoDienBanDau ?? 0);
+    }
+
+    if (chiSoDienCuoiKyValue === undefined || chiSoDienCuoiKyValue === null) {
+      chiSoDienCuoiKyValue = chiSoDienBanDauValue;
+    }
+
+    // Chỉ validate chỉ số ĐIỆN (bắt buộc dùng để tính tiền điện)
+    const numericChecks: Record<string, unknown> = {
+      chiSoDienBanDauValue,
+      chiSoDienCuoiKyValue
+    };
+    for (const [key, value] of Object.entries(numericChecks)) {
+      if (value === undefined || value === null || isNaN(Number(value))) {
+        return NextResponse.json(
+          { message: `Giá trị "${key}" không hợp lệ (thiếu hoặc không phải số). Vui lòng nhập đầy đủ chỉ số điện.` },
+          { status: 400 }
+        );
       }
     }
 
-    if (!chiSoDienCuoiKyValue) {
-      chiSoDienCuoiKyValue = chiSoDienBanDauValue;
-    }
-    if (!chiSoNuocCuoiKyValue) {
-      chiSoNuocCuoiKyValue = chiSoNuocBanDauValue;
-    }
+    const soDien = Number(chiSoDienCuoiKyValue) - Number(chiSoDienBanDauValue);
+    const soNuoc = Number(chiSoNuocCuoiKyValue) - Number(chiSoNuocBanDauValue); // không dùng tính tiền, giữ 0 mặc định
 
-   const soDien = chiSoDienCuoiKyValue - chiSoDienBanDauValue;
-  const soNuoc = chiSoNuocCuoiKyValue - chiSoNuocBanDauValue; // giữ lại để tham khảo, không dùng tính tiền
+    const tienDienTinh = soDien * hopDongData.giaDien;
 
-  const tienDienTinh = soDien * hopDongData.giaDien;
-
-// Tính tiền nước theo số người ở (thay cho tính theo chỉ số nước)
-  const soNguoiO = hopDongData.khachThueId?.length || 0;
-  const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
+    // Tính tiền nước theo số người ở (thay cho tính theo chỉ số nước)
+    const soNguoiO = hopDongData.khachThueId?.length || 0;
+    const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
     const daThanhToanValue = daThanhToan || 0;
@@ -361,13 +373,30 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-  const soDien = chiSoDienCuoiKy - chiSoDienBanDau;
-  const soNuoc = chiSoNuocCuoiKy - chiSoNuocBanDau; // giữ lại để tham khảo
+    // Chỉ validate chỉ số ĐIỆN (nước đã chuyển sang tính theo số người ở, không bắt buộc chỉ số)
+    const numericChecks: Record<string, unknown> = {
+      chiSoDienBanDau,
+      chiSoDienCuoiKy
+    };
+    for (const [key, value] of Object.entries(numericChecks)) {
+      if (value === undefined || value === null || isNaN(Number(value))) {
+        return NextResponse.json(
+          { message: `Giá trị "${key}" không hợp lệ (thiếu hoặc không phải số).` },
+          { status: 400 }
+        );
+      }
+    }
 
-  const tienDienTinh = soDien * hopDongData.giaDien;
+    const chiSoNuocBanDauValue = chiSoNuocBanDau ?? 0;
+    const chiSoNuocCuoiKyValue = chiSoNuocCuoiKy ?? 0;
 
-  const soNguoiO = hopDongData.khachThueId?.length || 0;
-  const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;  
+    const soDien = Number(chiSoDienCuoiKy) - Number(chiSoDienBanDau);
+    const soNuoc = Number(chiSoNuocCuoiKyValue) - Number(chiSoNuocBanDauValue); // không dùng tính tiền
+
+    const tienDienTinh = soDien * hopDongData.giaDien;
+
+    const soNguoiO = hopDongData.khachThueId?.length || 0;
+    const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;  
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
     const conLai = tongTien - daThanhToan;
@@ -386,8 +415,8 @@ export async function PUT(request: NextRequest) {
         chiSoDienCuoiKy,
         tienNuoc: tienNuocTinh,
         soNuoc,
-        chiSoNuocBanDau,
-        chiSoNuocCuoiKy,
+        chiSoNuocBanDau: chiSoNuocBanDauValue,
+        chiSoNuocCuoiKy: chiSoNuocCuoiKyValue,
         phiDichVu: phiDichVu || [],
         tongTien,
         daThanhToan,

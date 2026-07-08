@@ -13,9 +13,10 @@ export interface IHoaDon extends Document {
   chiSoDienBanDau: number;
   chiSoDienCuoiKy: number;
   tienNuoc: number;
-  soNuoc: number;
-  chiSoNuocBanDau: number;
-  chiSoNuocCuoiKy: number;
+  soNguoiO: number;
+  soNuoc?: number;
+  chiSoNuocBanDau?: number;
+  chiSoNuocCuoiKy?: number;
   phiDichVu: Array<{
     ten: string;
     gia: number;
@@ -107,19 +108,27 @@ const HoaDonSchema = new Schema<IHoaDon>({
     required: [true, 'Tiền nước là bắt buộc'],
     min: [0, 'Tiền nước phải lớn hơn hoặc bằng 0']
   },
+  // Số người tính tiền nước (cách tính hiện tại: tienNuoc = soNguoiO * đơn giá/người)
+  soNguoiO: {
+    type: Number,
+    default: 0,
+    min: [0, 'Số người tính tiền nước phải lớn hơn hoặc bằng 0']
+  },
+  // Các trường chỉ số nước theo đồng hồ - giữ lại để tương thích dữ liệu cũ,
+  // không còn bắt buộc vì cách tính tiền nước hiện tại dựa theo số người ở
   soNuoc: {
     type: Number,
-    required: [true, 'Số nước là bắt buộc'],
+    default: 0,
     min: [0, 'Số nước phải lớn hơn hoặc bằng 0']
   },
   chiSoNuocBanDau: {
     type: Number,
-    required: [true, 'Chỉ số nước ban đầu là bắt buộc'],
+    default: 0,
     min: [0, 'Chỉ số nước ban đầu phải lớn hơn hoặc bằng 0']
   },
   chiSoNuocCuoiKy: {
     type: Number,
-    required: [true, 'Chỉ số nước cuối kỳ là bắt buộc'],
+    default: 0,
     min: [0, 'Chỉ số nước cuối kỳ phải lớn hơn hoặc bằng 0']
   },
   phiDichVu: [PhiDichVuSchema],
@@ -166,15 +175,18 @@ HoaDonSchema.index({ thang: 1, nam: 1 });
 HoaDonSchema.index({ trangThai: 1 });
 HoaDonSchema.index({ hanThanhToan: 1 });
 
-// Pre-save middleware để tính conLai, cập nhật trangThai và tính số điện nước
+// Pre-save middleware để tính conLai, cập nhật trangThai và tính số điện (nước không còn tính theo chỉ số)
 HoaDonSchema.pre('save', function(next) {
-  // Tính số điện nước từ chỉ số
+  // Tính số điện từ chỉ số
   this.soDien = this.chiSoDienCuoiKy - this.chiSoDienBanDau;
-  this.soNuoc = this.chiSoNuocCuoiKy - this.chiSoNuocBanDau;
-  
-  // Đảm bảo số điện nước không âm
   if (this.soDien < 0) this.soDien = 0;
-  if (this.soNuoc < 0) this.soNuoc = 0;
+
+  // Số nước theo chỉ số đồng hồ chỉ còn mang tính tương thích ngược,
+  // không dùng để tính tienNuoc nữa (tienNuoc hiện tính theo soNguoiO ở phía form/API)
+  if (this.chiSoNuocCuoiKy !== undefined && this.chiSoNuocBanDau !== undefined) {
+    const soNuocTinh = this.chiSoNuocCuoiKy - this.chiSoNuocBanDau;
+    this.soNuoc = soNuocTinh < 0 ? 0 : soNuocTinh;
+  }
   
   this.conLai = this.tongTien - this.daThanhToan;
   
