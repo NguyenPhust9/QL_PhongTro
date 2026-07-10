@@ -266,58 +266,59 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
       </div>
     ),
   },
- {
-  id: "tienCo",
-  header: () => <div className="text-right">Tiền cò (80%)</div>,
-  cell: ({ row }) => {
-    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const tienCoc = phongInfo?.tienCoc || 0;
-    return (
-      <div className="text-right text-sm">
-        {formatCurrency(tienCoc * 0.8)}
-      </div>
-    );
+  {
+    id: "tienCo",
+    header: () => <div className="text-right">Tiền cò (80%)</div>,
+    cell: ({ row }) => {
+      // Tiền cọc lấy từ hopDong (mỗi hợp đồng có tienCoc riêng), KHÔNG lấy từ phong
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+      const tienCoc = hopDongInfo?.tienCoc || 0;
+      return (
+        <div className="text-right text-sm">
+          {formatCurrency(tienCoc * 0.8)}
+        </div>
+      );
+    },
   },
-},
-{
-  id: "tienThucTe",
-  header: () => <div className="text-right">Tiền thực tế (20%)</div>,
-  cell: ({ row }) => {
-    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const tienCoc = phongInfo?.tienCoc || 0;
-    return (
-      <div className="text-right text-sm">
-        {formatCurrency(tienCoc * 0.2)}
-      </div>
-    );
+  {
+    id: "tienThucTe",
+    header: () => <div className="text-right">Tiền thực tế (20%)</div>,
+    cell: ({ row }) => {
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+      const tienCoc = hopDongInfo?.tienCoc || 0;
+      return (
+        <div className="text-right text-sm">
+          {formatCurrency(tienCoc * 0.2)}
+        </div>
+      );
+    },
   },
-},
   {
     accessorKey: "phuongThuc",
     header: "Phương thức",
     cell: ({ row }) => getMethodBadge(row.original.phuongThuc),
   },
- {
-  id: "tienCoc",
-  header: () => <div className="text-right">Tiền cọc</div>,
-  cell: ({ row }) => {
-    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const tienCoc = phongInfo?.tienCoc
+  {
+    id: "tienCoc",
+    header: () => <div className="text-right">Tiền cọc</div>,
+    cell: ({ row }) => {
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+      const tienCoc = hopDongInfo?.tienCoc
 
-    if (tienCoc === undefined || tienCoc === null) {
-      return <div className="text-right text-muted-foreground">-</div>
-    }
+      if (tienCoc === undefined || tienCoc === null) {
+        return <div className="text-right text-muted-foreground">-</div>
+      }
 
-    return (
-      <div className="text-right text-sm font-medium">
-        {formatCurrency(tienCoc)}
-      </div>
-    )
+      return (
+        <div className="text-right text-sm font-medium">
+          {formatCurrency(tienCoc)}
+        </div>
+      )
+    },
   },
-},
   {
     accessorKey: "ngayThanhToan",
     header: "Ngày thanh toán",
@@ -538,12 +539,14 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
       })
     }
   }
-const handleExportExcel = () => {
+  const handleExportExcel = () => {
     const exportData = filteredByMonthYear.map((t) => {
       const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon : null
       const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null
       const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null
-      const tienCoc = phongInfo?.tienCoc || 0
+      // Tiền cọc lấy từ hopDong (mỗi hợp đồng có tienCoc riêng), KHÔNG lấy từ phong
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null
+      const tienCoc = hopDongInfo?.tienCoc || 0
       const phuongThucText =
         t.phuongThuc === 'tienMat' ? 'Tiền mặt' :
         t.phuongThuc === 'chuyenKhoan' ? 'Chuyển khoản' :

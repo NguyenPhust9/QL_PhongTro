@@ -74,14 +74,6 @@ export default function ThanhToanPage() {
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<string>('all');
 
-  // Bộ lọc riêng cho thẻ "Tiền cò (80%)"
-  const [tienCoMonthFilter, setTienCoMonthFilter] = useState<string>('all');
-  const [tienCoYearFilter, setTienCoYearFilter] = useState<string>('all');
-
-  // Bộ lọc riêng cho thẻ "Tiền thực tế (20%)"
-  const [tienTTMonthFilter, setTienTTMonthFilter] = useState<string>('all');
-  const [tienTTYearFilter, setTienTTYearFilter] = useState<string>('all');
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingThanhToan, setEditingThanhToan] = useState<ThanhToanPopulated | null>(null);
 
@@ -173,41 +165,28 @@ const doanhThuThanhToan = thanhToanList.filter(thanhToan => {
   return matchesMonth && matchesYear;
 });
 
-// Danh sách lọc riêng cho thẻ "Tiền cò (80%)"
-const doanhThuTienCo = thanhToanList.filter(thanhToan => {
-  const ngay = new Date(thanhToan.ngayThanhToan);
-  const matchesMonth = tienCoMonthFilter === 'all' || (ngay.getMonth() + 1).toString() === tienCoMonthFilter;
-  const matchesYear = tienCoYearFilter === 'all' || ngay.getFullYear().toString() === tienCoYearFilter;
-  return matchesMonth && matchesYear;
-});
-
-// Danh sách lọc riêng cho thẻ "Tiền thực tế (20%)"
-const doanhThuTienTT = thanhToanList.filter(thanhToan => {
-  const ngay = new Date(thanhToan.ngayThanhToan);
-  const matchesMonth = tienTTMonthFilter === 'all' || (ngay.getMonth() + 1).toString() === tienTTMonthFilter;
-  const matchesYear = tienTTYearFilter === 'all' || ngay.getFullYear().toString() === tienTTYearFilter;
-  return matchesMonth && matchesYear;
-});
-
-// Lấy tổng tiền cọc theo từng phòng DUY NHẤT (không nhân theo số dòng thanh toán/tháng)
+// Lấy tổng tiền cọc theo từng HỢP ĐỒNG DUY NHẤT (không nhân theo số dòng thanh toán/tháng)
+// Lưu ý: tienCoc lấy từ hopDong (không phải phong) vì mỗi hợp đồng có tienCoc riêng,
+// tránh trường hợp phòng đổi khách/hợp đồng mới khiến số liệu sai lệch.
+// Tiền cò (80%) và Tiền thực tế (20%) tính trên TOÀN BỘ tiền cọc, không chia theo tháng/năm.
 const tinhTongTienCocDuyNhat = (list: ThanhToanPopulated[]) => {
-  const seenRooms = new Set<string>();
+  const seenHopDong = new Set<string>();
   let tongTienCoc = 0;
   list.forEach((t) => {
     const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
-    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const phongId = phongInfo?._id || phongInfo?.maPhong;
-    if (phongId && !seenRooms.has(phongId)) {
-      seenRooms.add(phongId);
-      tongTienCoc += phongInfo?.tienCoc || 0;
+    const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+    const hopDongId = hopDongInfo?._id;
+    if (hopDongId && !seenHopDong.has(hopDongId)) {
+      seenHopDong.add(hopDongId);
+      tongTienCoc += hopDongInfo?.tienCoc || 0;
     }
   });
   return tongTienCoc;
 };
 
-const tongTienCo = tinhTongTienCocDuyNhat(doanhThuTienCo) * 0.8;
-
-const tongTienThucTe = tinhTongTienCocDuyNhat(doanhThuTienTT) * 0.2;
+const tongTienCocToanBo = tinhTongTienCocDuyNhat(thanhToanList);
+const tongTienCo = tongTienCocToanBo * 0.8;
+const tongTienThucTe = tongTienCocToanBo * 0.2;
 
 const tongTienTheoThang = doanhThuThanhToan.reduce((sum, t) => sum + t.soTien, 0);
   const getMethodBadge = (method: string) => {
@@ -394,38 +373,7 @@ const getYearOptions = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-green-600">Tiền cò (80%)</p>
-
-              <div className="flex items-center gap-1.5 mt-1.5 mb-1">
-                <Select value={tienCoMonthFilter} onValueChange={setTienCoMonthFilter}>
-                  <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Tháng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
-                    {getMonthOptions().map(month => (
-                      <SelectItem key={month} value={month.toString()} className="text-xs">
-                        Tháng {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={tienCoYearFilter} onValueChange={setTienCoYearFilter}>
-                  <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Năm" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
-                    {getYearOptions().map(year => (
-                      <SelectItem key={year} value={year.toString()} className="text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-2xl font-bold text-green-700 mt-1">{formatCurrency(tongTienCo)}</p>
+              <p className="text-2xl font-bold text-green-700 mt-2">{formatCurrency(tongTienCo)}</p>
             </div>
             <div className="bg-green-100 p-2 rounded-lg">
               <CreditCard className="h-5 w-5 text-green-600 flex-shrink-0" />
@@ -437,38 +385,7 @@ const getYearOptions = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-blue-600">Tiền thực tế (20%)</p>
-
-              <div className="flex items-center gap-1.5 mt-1.5 mb-1">
-                <Select value={tienTTMonthFilter} onValueChange={setTienTTMonthFilter}>
-                  <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Tháng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
-                    {getMonthOptions().map(month => (
-                      <SelectItem key={month} value={month.toString()} className="text-xs">
-                        Tháng {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={tienTTYearFilter} onValueChange={setTienTTYearFilter}>
-                  <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Năm" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
-                    {getYearOptions().map(year => (
-                      <SelectItem key={year} value={year.toString()} className="text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-2xl font-bold text-blue-700 mt-1">{formatCurrency(tongTienThucTe)}</p>
+              <p className="text-2xl font-bold text-blue-700 mt-2">{formatCurrency(tongTienThucTe)}</p>
             </div>
             <div className="bg-blue-100 p-2 rounded-lg">
               <CreditCard className="h-5 w-5 text-blue-600 flex-shrink-0" />
