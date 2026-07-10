@@ -147,7 +147,10 @@ export async function POST(request: NextRequest) {
       phiDichVu,
       daThanhToan,
       ghiChu,
-      
+      // Cho phép frontend gửi lên số tiền điện/nước đã sửa tay (manual override).
+      // Nếu không gửi (undefined) thì mới tự tính theo công thức mặc định.
+      tienDien: tienDienFromBody,
+      tienNuoc: tienNuocFromBody,
     } = body;
 
     if (!hopDong) {
@@ -264,11 +267,17 @@ export async function POST(request: NextRequest) {
     const soDien = Number(chiSoDienCuoiKyValue) - Number(chiSoDienBanDauValue);
     const soNuoc = Number(chiSoNuocCuoiKyValue) - Number(chiSoNuocBanDauValue); // không dùng tính tiền, giữ 0 mặc định
 
-    const tienDienTinh = soDien * hopDongData.giaDien;
+    // Tiền điện: nếu frontend gửi tienDien (đã sửa tay) và là số hợp lệ -> dùng đúng giá trị đó.
+    // Ngược lại tự tính theo chỉ số điện như cũ.
+    const tienDienTinh = (tienDienFromBody !== undefined && tienDienFromBody !== null && !isNaN(Number(tienDienFromBody)))
+      ? Number(tienDienFromBody)
+      : soDien * hopDongData.giaDien;
 
-    // Tính tiền nước theo số người ở (thay cho tính theo chỉ số nước)
+    // Tính tiền nước theo số người ở (mặc định), nhưng ưu tiên giá trị sửa tay từ frontend nếu có
     const soNguoiO = hopDongData.khachThueId?.length || 0;
-    const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
+    const tienNuocTinh = (tienNuocFromBody !== undefined && tienNuocFromBody !== null && !isNaN(Number(tienNuocFromBody)))
+      ? Number(tienNuocFromBody)
+      : soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
     const daThanhToanValue = daThanhToan || 0;
@@ -343,7 +352,10 @@ export async function PUT(request: NextRequest) {
       daThanhToan,
       trangThai,
       hanThanhToan,
-      ghiChu
+      ghiChu,
+      // Cho phép frontend gửi lên số tiền điện/nước đã sửa tay (manual override).
+      tienDien: tienDienFromBody,
+      tienNuoc: tienNuocFromBody,
     } = body;
 
     if (!id) {
@@ -393,10 +405,16 @@ export async function PUT(request: NextRequest) {
     const soDien = Number(chiSoDienCuoiKy) - Number(chiSoDienBanDau);
     const soNuoc = Number(chiSoNuocCuoiKyValue) - Number(chiSoNuocBanDauValue); // không dùng tính tiền
 
-    const tienDienTinh = soDien * hopDongData.giaDien;
+    // Tiền điện: ưu tiên giá trị sửa tay từ frontend nếu có, ngược lại tự tính theo chỉ số
+    const tienDienTinh = (tienDienFromBody !== undefined && tienDienFromBody !== null && !isNaN(Number(tienDienFromBody)))
+      ? Number(tienDienFromBody)
+      : soDien * hopDongData.giaDien;
 
+    // Tiền nước: ưu tiên giá trị sửa tay từ frontend nếu có, ngược lại tự tính theo số người ở
     const soNguoiO = hopDongData.khachThueId?.length || 0;
-    const tienNuocTinh = soNguoiO * DON_GIA_NUOC_THEO_NGUOI;  
+    const tienNuocTinh = (tienNuocFromBody !== undefined && tienNuocFromBody !== null && !isNaN(Number(tienNuocFromBody)))
+      ? Number(tienNuocFromBody)
+      : soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
     const conLai = tongTien - daThanhToan;
