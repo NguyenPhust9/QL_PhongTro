@@ -189,19 +189,25 @@ const doanhThuTienTT = thanhToanList.filter(thanhToan => {
   return matchesMonth && matchesYear;
 });
 
-const tongTienCo = doanhThuTienCo.reduce((sum, t) => {
-  const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
-  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-  const giaThue = phongInfo?.giaThue || 0;
-  return sum + giaThue * 0.8;
-}, 0);
+// Lấy tổng tiền cọc theo từng phòng DUY NHẤT (không nhân theo số dòng thanh toán/tháng)
+const tinhTongTienCocDuyNhat = (list: ThanhToanPopulated[]) => {
+  const seenRooms = new Set<string>();
+  let tongTienCoc = 0;
+  list.forEach((t) => {
+    const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
+    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+    const phongId = phongInfo?._id || phongInfo?.maPhong;
+    if (phongId && !seenRooms.has(phongId)) {
+      seenRooms.add(phongId);
+      tongTienCoc += phongInfo?.tienCoc || 0;
+    }
+  });
+  return tongTienCoc;
+};
 
-const tongTienThucTe = doanhThuTienTT.reduce((sum, t) => {
-  const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
-  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-  const giaThue = phongInfo?.giaThue || 0;
-  return sum + giaThue * 0.2;
-}, 0);
+const tongTienCo = tinhTongTienCocDuyNhat(doanhThuTienCo) * 0.8;
+
+const tongTienThucTe = tinhTongTienCocDuyNhat(doanhThuTienTT) * 0.2;
 
 const tongTienTheoThang = doanhThuThanhToan.reduce((sum, t) => sum + t.soTien, 0);
   const getMethodBadge = (method: string) => {

@@ -57,6 +57,8 @@ import {
   VisibilityState,
 } from "@tanstack/react-table"
 import { toast } from "sonner"
+import * as XLSX from "xlsx"
+
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -264,16 +266,16 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
       </div>
     ),
   },
-  {
+ {
   id: "tienCo",
   header: () => <div className="text-right">Tiền cò (80%)</div>,
   cell: ({ row }) => {
     const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
     const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const giaThue = phongInfo?.giaThue || 0;
+    const tienCoc = phongInfo?.tienCoc || 0;
     return (
       <div className="text-right text-sm">
-        {formatCurrency(giaThue * 0.8)}
+        {formatCurrency(tienCoc * 0.8)}
       </div>
     );
   },
@@ -284,10 +286,10 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
   cell: ({ row }) => {
     const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
     const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const giaThue = phongInfo?.giaThue || 0;
+    const tienCoc = phongInfo?.tienCoc || 0;
     return (
       <div className="text-right text-sm">
-        {formatCurrency(giaThue * 0.2)}
+        {formatCurrency(tienCoc * 0.2)}
       </div>
     );
   },
@@ -536,7 +538,46 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
       })
     }
   }
+const handleExportExcel = () => {
+    const exportData = filteredByMonthYear.map((t) => {
+      const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon : null
+      const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null
+      const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null
+      const tienCoc = phongInfo?.tienCoc || 0
+      const phuongThucText =
+        t.phuongThuc === 'tienMat' ? 'Tiền mặt' :
+        t.phuongThuc === 'chuyenKhoan' ? 'Chuyển khoản' :
+        t.phuongThuc === 'viDienTu' ? 'Ví điện tử' : t.phuongThuc
 
+      return {
+        'Hóa đơn': getHoaDonInfo(t.hoaDon, tableProps.hoaDonList),
+        'Phòng': phongInfo?.maPhong || 'N/A',
+        'Người đại diện': khachThueInfo?.hoTen || 'N/A',
+        'Số tiền': t.soTien,
+        'Tiền cò (80%)': tienCoc * 0.8,
+        'Tiền thực tế (20%)': tienCoc * 0.2,
+        'Phương thức': phuongThucText,
+        'Tiền cọc': tienCoc,
+        'Ngày thanh toán': new Date(t.ngayThanhToan).toLocaleDateString('vi-VN'),
+        'Ghi chú': t.ghiChu || '-',
+      }
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    worksheet['!cols'] = [
+      { wch: 16 }, { wch: 10 }, { wch: 20 }, { wch: 14 },
+      { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 24 },
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Thanh toán')
+
+    const today = new Date().toISOString().split('T')[0]
+    XLSX.writeFile(workbook, `danh-sach-thanh-toan_${today}.xlsx`)
+
+    toast.success(`Đã xuất ${exportData.length} giao dịch ra file Excel`)
+  }
   const selectedCount = table.getFilteredSelectedRowModel().rows.length
 
   return (
@@ -593,6 +634,16 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
 
         {/* Tùy chỉnh cột bên phải */}
         <div className="flex items-center gap-2">
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            className="text-green-700 border-green-200 hover:bg-green-50"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            <span className="hidden lg:inline">Xuất Excel</span>
+            <span className="lg:hidden">Excel</span>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
