@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         path: 'hoaDon',
         select: 'maHoaDon thang nam tongTien phong khachThue hopDong',
         populate: [
-        { path: 'phong', select: 'maPhong giaThue' },
+        { path: 'phong', select: 'maPhong giaThue toaNha' },
         { path: 'khachThue', select: 'hoTen' },
         // Tiền cọc THẬT nằm ở Hợp đồng (mỗi hợp đồng có tienCoc riêng),
         // không lấy từ Phòng vì trường Phòng.tienCoc không đồng bộ khi đổi khách/hợp đồng mới.

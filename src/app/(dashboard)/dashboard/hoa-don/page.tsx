@@ -46,7 +46,7 @@ import {
   Edit,
   Trash2
 } from 'lucide-react';
-import { HoaDon, HopDong, Phong, KhachThue } from '@/types';
+import { HoaDon, HopDong, Phong, KhachThue, ToaNha } from '@/types';
 import { toast } from 'sonner';
 // Đã bỏ import tĩnh html2canvas và jspdf ở đây — chuyển sang dynamic import
 // bên trong handleScreenshot để không làm nặng lần tải trang đầu tiên.
@@ -76,6 +76,35 @@ const getKhachThueName = (khachThueId: string | KhachThue, khachThueList: KhachT
   return 'N/A';
 };
 
+// Lấy id tòa nhà tương ứng với một hóa đơn, dựa trên phòng của hóa đơn đó.
+// Xử lý cả trường hợp hoaDon.phong đã được populate (object có sẵn toaNha)
+// và trường hợp chỉ là id (phải tra cứu qua phongList).
+const getToaNhaIdOfHoaDon = (
+  hoaDon: HoaDon,
+  phongList: Phong[]
+): string | undefined => {
+  const phong = hoaDon.phong as
+    | string
+    | (Phong & { toaNha?: string | { _id: string } });
+
+  if (typeof phong === 'object' && phong !== null) {
+    const toaNha = phong.toaNha;
+    if (typeof toaNha === 'object' && toaNha && '_id' in toaNha) {
+      return (toaNha as { _id: string })._id;
+    }
+    if (typeof toaNha === 'string') {
+      return toaNha;
+    }
+    // phong là object nhưng không có toaNha kèm theo -> tra qua phongList bằng _id
+    const phongObj = phongList.find(p => p._id === phong._id);
+    return phongObj?.toaNha as string | undefined;
+  }
+
+  // phong chỉ là string id
+  const phongObj = phongList.find(p => p._id === phong);
+  return phongObj?.toaNha as string | undefined;
+};
+
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -90,17 +119,20 @@ export default function HoaDonPage() {
     hopDongList: HopDong[];
     phongList: Phong[];
     khachThueList: KhachThue[];
+    toaNhaList: ToaNha[];
   }>({ key: 'hoa-don-data', duration: 300000 }); // 5 phút
   
   const [hoaDonList, setHoaDonList] = useState<HoaDon[]>([]);
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
   const [phongList, setPhongList] = useState<Phong[]>([]);
   const [khachThueList, setKhachThueList] = useState<KhachThue[]>([]);
+  const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<string>('all');
+  const [toaNhaFilter, setToaNhaFilter] = useState<string>('all');
   const [isAutoCreating, setIsAutoCreating] = useState(false);
   const [viewingHoaDon, setViewingHoaDon] = useState<HoaDon | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -133,23 +165,33 @@ export default function HoaDonPage() {
           setHopDongList(cachedData.hopDongList || []);
           setPhongList(cachedData.phongList || []);
           setKhachThueList(cachedData.khachThueList || []);
+          setToaNhaList(cachedData.toaNhaList || []);
           setLoading(false);
           return;
         }
       }
       
-      // Gọi song song 2 API thay vì tuần tự (trước đây fetch hóa đơn
-      // xong rồi mới fetch form-data, tổng thời gian chờ = A + B).
-      // Giờ cả 2 chạy cùng lúc, tổng thời gian chờ chỉ còn max(A, B).
-      const [hoaDonResponse, formDataResponse] = await Promise.all([
+      // Gọi song song 3 API thay vì tuần tự (hóa đơn, form-data, tòa nhà)
+      // để tổng thời gian chờ chỉ còn max(A, B, C) thay vì A + B + C.
+      const [hoaDonResponse, formDataResponse, toaNhaResponse] = await Promise.all([
         fetch('/api/hoa-don?limit=1000'),
         fetch('/api/hoa-don/form-data'),
+        fetch('/api/toa-nha?limit=100'),
       ]);
 
       // Xử lý hóa đơn
       const hoaDonData = hoaDonResponse.ok ? await hoaDonResponse.json() : { data: [] };
       const hoaDons = hoaDonData.data || [];
       setHoaDonList(hoaDons);
+
+      // Xử lý tòa nhà
+      const toaNhaData = toaNhaResponse.ok ? await toaNhaResponse.json() : { data: [] };
+      const toaNhas = toaNhaData.data || [];
+      setToaNhaList(toaNhas);
+
+      if (!toaNhaResponse.ok) {
+        console.error('Failed to load toa nha:', toaNhaResponse.status);
+      }
 
       // Xử lý form data (hop dong, phong, khach thue)
       if (formDataResponse.ok) {
@@ -169,6 +211,7 @@ export default function HoaDonPage() {
           hopDongList: hopDongs,
           phongList: phongs,
           khachThueList: khachThues,
+          toaNhaList: toaNhas,
         });
       } else {
         console.error('Failed to load form data:', formDataResponse.status);
@@ -187,14 +230,17 @@ export default function HoaDonPage() {
     toast.success('Đã tải dữ liệu mới nhất');
   };
 
-  const filteredHoaDon = hoaDonList.filter(hoaDon => {
+ const filteredHoaDon = hoaDonList.filter(hoaDon => {
+    const maPhong = getPhongName(hoaDon.phong, phongList);
     const matchesSearch = hoaDon.maHoaDon.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hoaDon.ghiChu?.toLowerCase().includes(searchTerm.toLowerCase());
+                         hoaDon.ghiChu?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         maPhong.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || hoaDon.trangThai === statusFilter;
     const matchesMonth = monthFilter === 'all' || hoaDon.thang.toString() === monthFilter;
     const matchesYear = yearFilter === 'all' || hoaDon.nam.toString() === yearFilter;
+    const matchesToaNha = toaNhaFilter === 'all' || getToaNhaIdOfHoaDon(hoaDon, phongList) === toaNhaFilter;
     
-    return matchesSearch && matchesStatus && matchesMonth && matchesYear;
+    return matchesSearch && matchesStatus && matchesMonth && matchesYear && matchesToaNha;
   });
 
   const doanhThuHoaDon = hoaDonList.filter(hoaDon => {
@@ -729,6 +775,9 @@ export default function HoaDonPage() {
             data={filteredHoaDon}
             phongList={phongList}
             khachThueList={khachThueList}
+            toaNhaList={toaNhaList}
+            toaNhaFilter={toaNhaFilter}
+            onToaNhaChange={setToaNhaFilter}
             onView={handleView}
             onDownload={handleDownload}
             onScreenshot={handleScreenshot}
@@ -762,14 +811,14 @@ export default function HoaDonPage() {
         <div className="space-y-3 mb-4 bg-white p-3 rounded-lg border border-gray-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm hóa đơn..."
+           <Input
+  placeholder="Tìm kiếm theo mã hóa đơn, số phòng..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 text-sm bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Trạng thái" />
@@ -781,6 +830,21 @@ export default function HoaDonPage() {
                 <SelectItem value="thanhToanMotPhan" className="text-sm">Thanh toán 1 phần</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={toaNhaFilter} onValueChange={setToaNhaFilter}>
+              <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
+                <SelectValue placeholder="Tòa nhà" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-sm">Tất cả tòa nhà</SelectItem>
+                {toaNhaList.map((toaNha) => (
+                  <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
+                    {toaNha.tenToaNha}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <Select value={monthFilter} onValueChange={setMonthFilter}>
               <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
                 <SelectValue placeholder="Tháng" />

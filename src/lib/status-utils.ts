@@ -82,11 +82,28 @@ export async function calculateKhachThueStatus(khachThueId: string): Promise<'da
 }
 
 /**
- * Cập nhật trạng thái phòng dựa trên hợp đồng
+ * Cập nhật trạng thái phòng dựa trên hợp đồng.
+ *
+ * LƯU Ý QUAN TRỌNG: Hàm này CHỈ nên được gọi từ các sự kiện thay đổi vòng đời
+ * hợp đồng (tạo hợp đồng mới, hủy hợp đồng, gia hạn hợp đồng...), KHÔNG được
+ * gọi tự động mỗi khi tải trang / xem chi tiết phòng. Nếu không, mọi trạng thái
+ * admin chọn tay trong form sửa phòng (Đang thuê, Bảo trì, Trống, Đã đặt...)
+ * sẽ bị ghi đè ngay khi có request GET tiếp theo.
+ *
+ * Nếu phòng đang ở trạng thái "Bảo trì" (baoTri) — một trạng thái luôn được
+ * set tay, không thể suy ra từ hợp đồng — hàm sẽ bỏ qua, không tự động đổi
+ * sang trạng thái khác.
+ *
  * @param phongId - ID của phòng
  */
 export async function updatePhongStatus(phongId: string): Promise<void> {
   try {
+    const phong = await Phong.findById(phongId);
+    if (!phong) return;
+
+    // Không tự động ghi đè khi phòng đang được đánh dấu Bảo trì thủ công
+    if (phong.trangThai === 'baoTri') return;
+
     const newStatus = await calculatePhongStatus(phongId);
     await Phong.findByIdAndUpdate(phongId, { trangThai: newStatus });
   } catch (error) {

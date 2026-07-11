@@ -137,9 +137,17 @@ export default function HopDongPage() {
   };
 
 
-  const filteredHopDong = hopDongList.filter(hopDong => {
+const filteredHopDong = hopDongList.filter(hopDong => {
+    // Lấy mã phòng để phục vụ tìm kiếm (không dùng getPhongName vì hàm đó
+    // được khai báo bên dưới bằng const, sẽ gây lỗi TDZ nếu gọi ở đây)
+    const phongInfo = typeof hopDong.phong === 'object'
+      ? hopDong.phong
+      : phongList.find(p => p._id === hopDong.phong);
+    const maPhong = (phongInfo as { maPhong?: string })?.maPhong || '';
+
     const matchesSearch = hopDong.maHopDong.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hopDong.dieuKhoan.toLowerCase().includes(searchTerm.toLowerCase());
+                         hopDong.dieuKhoan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         maPhong.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || hopDong.trangThai === statusFilter;
     
     // Filter by toa nha
@@ -1262,7 +1270,7 @@ export default function HopDongPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Tìm kiếm hợp đồng..."
+              placeholder="Tìm kiếm hợp đồng, số phòng"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 text-sm bg-gray-50 border-gray-300 focus:border-blue-500 focus:ring-blue-500"

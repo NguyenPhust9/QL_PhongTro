@@ -88,7 +88,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { HoaDon } from '@/types'
+import type { HoaDon, ToaNha } from '@/types'
 import type { ThanhToanPopulated } from './page'
 
 // Helper functions
@@ -167,6 +167,17 @@ const getHoaDonInfo = (hoaDon: string | HoaDon | null, hoaDonList: HoaDon[]) => 
     return hoaDonItem?.maHoaDon || 'N/A'
   }
   return 'N/A'
+}
+
+// Lấy id tòa nhà từ một thanh toán (đi qua hoaDon -> phong -> toaNha)
+const getToaNhaIdFromThanhToan = (thanhToan: ThanhToanPopulated): string | null => {
+  const hoaDonInfo = thanhToan.hoaDon && typeof thanhToan.hoaDon === 'object' ? thanhToan.hoaDon : null
+  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null
+  if (!phongInfo) return null
+  const toaNha = phongInfo.toaNha
+  if (!toaNha) return null
+  if (typeof toaNha === 'object') return toaNha._id || null
+  return toaNha
 }
 
 const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated>[] => [
@@ -424,6 +435,10 @@ type ThanhToanDataTableProps = ThanhToanTableProps & {
   onMonthChange?: (value: string) => void
   yearFilter?: string
   onYearChange?: (value: string) => void
+  // Bộ lọc tòa nhà
+  toaNhaList?: ToaNha[]
+  toaNhaFilter?: string
+  onToaNhaChange?: (value: string) => void
 }
 
 // Helper tạo danh sách tháng/năm cho bộ lọc
@@ -443,6 +458,9 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
     onMonthChange,
     yearFilter,
     onYearChange,
+    toaNhaList,
+    toaNhaFilter,
+    onToaNhaChange,
     ...tableProps
   } = props
   const [data, setData] = React.useState(() => initialData)
@@ -461,33 +479,42 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
   // Giá trị đang chọn trong Select (chưa áp dụng lọc)
   const [monthSelectValue, setMonthSelectValue] = React.useState(monthFilter || 'all')
   const [yearSelectValue, setYearSelectValue] = React.useState(yearFilter || 'all')
+  const [toaNhaSelectValue, setToaNhaSelectValue] = React.useState(toaNhaFilter || 'all')
   // Giá trị đã được áp dụng (bấm OK) - dùng để lọc bảng thực sự
   const [appliedMonth, setAppliedMonth] = React.useState(monthFilter || 'all')
   const [appliedYear, setAppliedYear] = React.useState(yearFilter || 'all')
+  const [appliedToaNha, setAppliedToaNha] = React.useState(toaNhaFilter || 'all')
 
   // Sync data when prop changes
   React.useEffect(() => {
     setData(initialData)
   }, [initialData])
 
-  // Lọc dữ liệu theo tháng/năm (dựa trên ngayThanhToan) trước khi đưa vào bảng
-  // Chỉ áp dụng giá trị đã bấm OK (appliedMonth/appliedYear), không lọc theo giá trị đang chọn dở
-  const filteredByMonthYear = React.useMemo(() => {
+  // Lọc dữ liệu theo tháng/năm (dựa trên ngayThanhToan) và tòa nhà trước khi đưa vào bảng
+  // Chỉ áp dụng giá trị đã bấm OK (applied...), không lọc theo giá trị đang chọn dở
+  const filteredData = React.useMemo(() => {
     return data.filter((thanhToan) => {
       const ngay = new Date(thanhToan.ngayThanhToan)
       const matchesMonth =
         !appliedMonth || appliedMonth === 'all' || (ngay.getMonth() + 1).toString() === appliedMonth
       const matchesYear =
         !appliedYear || appliedYear === 'all' || ngay.getFullYear().toString() === appliedYear
-      return matchesMonth && matchesYear
+
+      const toaNhaId = getToaNhaIdFromThanhToan(thanhToan)
+      const matchesToaNha =
+        !appliedToaNha || appliedToaNha === 'all' || toaNhaId === appliedToaNha
+
+      return matchesMonth && matchesYear && matchesToaNha
     })
-  }, [data, appliedMonth, appliedYear])
+  }, [data, appliedMonth, appliedYear, appliedToaNha])
 
   const handleApplyFilter = () => {
     setAppliedMonth(monthSelectValue)
     setAppliedYear(yearSelectValue)
+    setAppliedToaNha(toaNhaSelectValue)
     onMonthChange?.(monthSelectValue)
     onYearChange?.(yearSelectValue)
+    onToaNhaChange?.(toaNhaSelectValue)
   }
 
   const columns = React.useMemo(() => createColumns(tableProps), [tableProps])
@@ -500,12 +527,12 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => filteredByMonthYear?.map(({ _id }) => _id!) || [],
-    [filteredByMonthYear]
+    () => filteredData?.map(({ _id }) => _id!) || [],
+    [filteredData]
   )
 
   const table = useReactTable({
-    data: filteredByMonthYear,
+    data: filteredData,
     columns,
     state: {
       sorting,
@@ -540,7 +567,7 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
     }
   }
   const handleExportExcel = () => {
-    const exportData = filteredByMonthYear.map((t) => {
+    const exportData = filteredData.map((t) => {
       const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon : null
       const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null
       const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null
@@ -587,7 +614,7 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         {/* Tìm kiếm và Bộ lọc bên trái */}
-        <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 flex-1 w-full">
           <div className="flex-1 sm:max-w-xs">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -599,6 +626,22 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
               />
             </div>
           </div>
+
+          {/* Bộ lọc tòa nhà */}
+          <Select value={toaNhaSelectValue} onValueChange={setToaNhaSelectValue}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Tòa nhà" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả tòa nhà</SelectItem>
+              {toaNhaList?.map((toaNha) => (
+                <SelectItem key={toaNha._id} value={toaNha._id!}>
+                  {toaNha.tenToaNha}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={monthSelectValue} onValueChange={setMonthSelectValue}>
             <SelectTrigger className="w-full sm:w-[120px]">
               <SelectValue placeholder="Tháng" />

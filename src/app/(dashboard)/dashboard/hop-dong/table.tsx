@@ -530,7 +530,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Tìm kiếm theo mã hợp đồng..."
+                placeholder="Tìm kiếm theo mã hợp đồng, số phòng"
                 value={searchTerm || ''}
                 onChange={e => onSearchChange?.(e.target.value)}
                 className="pl-10 bg-gray-50 border-gray-300"
