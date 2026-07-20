@@ -86,7 +86,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { HoaDon, Phong, KhachThue } from '@/types'
+import type { HoaDon, Phong, KhachThue, ToaNha } from '@/types'
 
 // Helper functions
 const formatCurrency = (amount: number) => {
@@ -386,10 +386,30 @@ type HoaDonDataTableProps = HoaDonTableProps & {
   onYearChange?: (value: string) => void
   getMonthOptions?: () => number[]
   getYearOptions?: () => number[]
+  toaNhaList?: ToaNha[]
+  toaNhaFilter?: string
+  onToaNhaChange?: (value: string) => void
 }
 
 export function HoaDonDataTable(props: HoaDonDataTableProps) {
-  const { data: initialData, onDeleteMultiple, searchTerm, onSearchChange, statusFilter, onStatusChange, monthFilter, onMonthChange, yearFilter, onYearChange, getMonthOptions, getYearOptions, ...tableProps } = props
+  const {
+    data: initialData,
+    onDeleteMultiple,
+    searchTerm,
+    onSearchChange,
+    statusFilter,
+    onStatusChange,
+    monthFilter,
+    onMonthChange,
+    yearFilter,
+    onYearChange,
+    getMonthOptions,
+    getYearOptions,
+    toaNhaList,
+    toaNhaFilter,
+    onToaNhaChange,
+    ...tableProps
+  } = props
   const [data, setData] = React.useState(() => initialData)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -482,12 +502,12 @@ export function HoaDonDataTable(props: HoaDonDataTableProps) {
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         {/* Tìm kiếm và Bộ lọc bên trái */}
-        <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 flex-1 w-full">
           <div className="flex-1 sm:max-w-xs">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Tìm kiếm theo mã hóa đơn..."
+                placeholder="Tìm kiếm theo mã hóa đơn, số phòng"
                 value={searchTerm || ''}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 className="pl-10"
@@ -506,6 +526,22 @@ export function HoaDonDataTable(props: HoaDonDataTableProps) {
               <SelectItem value="quaHan">Quá hạn</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Bộ lọc tòa nhà */}
+          <Select value={toaNhaFilter} onValueChange={onToaNhaChange}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Tòa nhà" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả tòa nhà</SelectItem>
+              {toaNhaList?.map((toaNha) => (
+                <SelectItem key={toaNha._id} value={toaNha._id!}>
+                  {toaNha.tenToaNha}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={monthFilter} onValueChange={onMonthChange}>
             <SelectTrigger className="w-full sm:w-[120px]">
               <SelectValue placeholder="Tháng" />
@@ -736,4 +772,3 @@ function HoaDonCellViewer({
     </Button>
   )
 }
-

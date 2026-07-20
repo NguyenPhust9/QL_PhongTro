@@ -100,6 +100,11 @@ export default function ThemMoiHoaDonPage() {
   const [submitting, setSubmitting] = useState(false);
   const [hopDongSearchTerm, setHopDongSearchTerm] = useState('');
 
+  // Cờ đánh dấu "Thành tiền" điện/nước đã được người dùng sửa tay
+  // Khi true, calculateTotal() sẽ KHÔNG tự tính đè lên giá trị đã nhập tay
+  const [dienManual, setDienManual] = useState(false);
+  const [nuocManual, setNuocManual] = useState(false);
+
   const [formData, setFormData] = useState({
     maHoaDon: '',
     hopDong: '',
@@ -196,6 +201,10 @@ export default function ThemMoiHoaDonPage() {
       if (selectedHopDong) {
         console.log('Auto-filling form data from contract:', selectedHopDong);
         
+        // Đổi hợp đồng thì reset chế độ sửa tay để tính lại tự động cho hợp đồng mới
+        setDienManual(false);
+        setNuocManual(false);
+
         setFormData(prev => ({
           ...prev,
           phong: selectedHopDong.phong as string,
@@ -227,10 +236,10 @@ export default function ThemMoiHoaDonPage() {
     const selectedHopDong = hopDongList.find(hd => hd._id === formData.hopDong);
     const giaDien = selectedHopDong?.giaDien || 0;
     
-    const tienDienTinh = soDien * giaDien;
-
-    // Tính tiền nước theo số người TỰ NHẬP (formData.soNguoiO)
-    const tienNuocTinh = formData.soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
+    // Nếu người dùng đã sửa tay "Thành tiền" thì giữ nguyên giá trị đó,
+    // ngược lại tính tự động như cũ
+    const tienDienTinh = dienManual ? formData.tienDien : soDien * giaDien;
+    const tienNuocTinh = nuocManual ? formData.tienNuoc : formData.soNguoiO * DON_GIA_NUOC_THEO_NGUOI;
     
     const total = formData.tienPhong + tienDienTinh + tienNuocTinh + totalPhiDichVu;
     const conLai = total - formData.daThanhToan;
@@ -247,7 +256,8 @@ export default function ThemMoiHoaDonPage() {
 
   useEffect(() => {
     calculateTotal();
-  }, [formData.tienPhong, formData.chiSoDienBanDau, formData.chiSoDienCuoiKy, formData.phiDichVu, formData.daThanhToan, formData.hopDong, formData.soNguoiO, hopDongList]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.tienPhong, formData.chiSoDienBanDau, formData.chiSoDienCuoiKy, formData.phiDichVu, formData.daThanhToan, formData.hopDong, formData.soNguoiO, hopDongList, dienManual, nuocManual, formData.tienDien, formData.tienNuoc]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -723,9 +733,34 @@ export default function ThemMoiHoaDonPage() {
                         </td>
                         <td className="border border-gray-200 px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <span className="font-medium text-green-600">{formData.tienDien.toLocaleString('vi-VN')}</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={formData.tienDien}
+                              onChange={(e) => {
+                                const value = Math.max(0, parseInt(e.target.value) || 0);
+                                setDienManual(true);
+                                setFormData(prev => ({ ...prev, tienDien: value }));
+                              }}
+                              className={`h-8 w-28 text-right ${dienManual ? 'border-amber-400 bg-amber-50' : ''}`}
+                            />
                             <span className="text-xs text-gray-500">VNĐ</span>
+                            {dienManual && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDienManual(false)}
+                                className="h-7 w-7 p-0"
+                                title="Tính lại tự động theo chỉ số điện"
+                              >
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </div>
+                          {dienManual && (
+                            <div className="text-xs text-amber-600 mt-1">✏️ Đã sửa tay</div>
+                          )}
                         </td>
                       </tr>
 
@@ -764,9 +799,34 @@ export default function ThemMoiHoaDonPage() {
                         </td>
                         <td className="border border-gray-200 px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <span className="font-medium text-green-600">{formData.tienNuoc.toLocaleString('vi-VN')}</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={formData.tienNuoc}
+                              onChange={(e) => {
+                                const value = Math.max(0, parseInt(e.target.value) || 0);
+                                setNuocManual(true);
+                                setFormData(prev => ({ ...prev, tienNuoc: value }));
+                              }}
+                              className={`h-8 w-28 text-right ${nuocManual ? 'border-amber-400 bg-amber-50' : ''}`}
+                            />
                             <span className="text-xs text-gray-500">VNĐ</span>
+                            {nuocManual && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setNuocManual(false)}
+                                className="h-7 w-7 p-0"
+                                title="Tính lại tự động theo số người"
+                              >
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </div>
+                          {nuocManual && (
+                            <div className="text-xs text-amber-600 mt-1">✏️ Đã sửa tay</div>
+                          )}
                         </td>
                       </tr>
                     </tbody>

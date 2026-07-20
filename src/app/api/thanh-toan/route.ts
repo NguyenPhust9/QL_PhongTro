@@ -4,6 +4,7 @@ import ThanhToan from '@/models/ThanhToan';
 import HoaDon from '@/models/HoaDon';
 import '@/models/KhachThue';
 import '@/models/Phong';
+import '@/models/HopDong';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -38,10 +39,13 @@ export async function GET(request: NextRequest) {
     const thanhToans = await ThanhToan.find(query)
       .populate({
         path: 'hoaDon',
-        select: 'maHoaDon thang nam tongTien phong khachThue',
+        select: 'maHoaDon thang nam tongTien phong khachThue hopDong',
         populate: [
-        { path: 'phong', select: 'maPhong tienCoc giaThue' },
-        { path: 'khachThue', select: 'hoTen' }
+        { path: 'phong', select: 'maPhong giaThue toaNha' },
+        { path: 'khachThue', select: 'hoTen' },
+        // Tiền cọc THẬT nằm ở Hợp đồng (mỗi hợp đồng có tienCoc riêng),
+        // không lấy từ Phòng vì trường Phòng.tienCoc không đồng bộ khi đổi khách/hợp đồng mới.
+        { path: 'hopDong', select: 'maHopDong tienCoc' }
         ]
       })
       .populate('nguoiNhan', 'hoTen email')   
@@ -160,7 +164,7 @@ export async function POST(request: NextRequest) {
     const updatedHoaDon = await HoaDon.findById(hoaDonId)
       .populate('phong', 'maPhong')
       .populate('khachThue', 'hoTen')
-      .populate('hopDong', 'maHopDong');
+      .populate('hopDong', 'maHopDong tienCoc');
 
     return NextResponse.json({
       success: true,

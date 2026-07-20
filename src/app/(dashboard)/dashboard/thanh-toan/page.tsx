@@ -50,7 +50,7 @@ import {
   FileText,
   Copy
 } from 'lucide-react';
-import { ThanhToan, HoaDon } from '@/types';
+import { ThanhToan, HoaDon, ToaNha } from '@/types';
 import { toast } from 'sonner';
 import { ThanhToanDataTable } from './table';
 
@@ -59,28 +59,34 @@ export type ThanhToanPopulated = Omit<ThanhToan, 'hoaDon'> & {
   hoaDon: string | HoaDon | null;
 };
 
+// Lấy id tòa nhà từ một thanh toán (đi qua hoaDon -> phong -> toaNha)
+const getToaNhaIdFromThanhToan = (thanhToan: ThanhToanPopulated): string | null => {
+  const hoaDonInfo = thanhToan.hoaDon && typeof thanhToan.hoaDon === 'object' ? (thanhToan.hoaDon as HoaDon) : null;
+  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
+  if (!phongInfo) return null;
+  const toaNha = phongInfo.toaNha;
+  if (!toaNha) return null;
+  if (typeof toaNha === 'object') return toaNha._id || null;
+  return toaNha;
+};
+
 export default function ThanhToanPage() {
   const cache = useCache<{ 
     thanhToanList: ThanhToanPopulated[];
     hoaDonList: HoaDon[];
+    toaNhaList: ToaNha[];
   }>({ key: 'thanh-toan-data', duration: 300000 });
   
   const [thanhToanList, setThanhToanList] = useState<ThanhToanPopulated[]>([]);
   const [hoaDonList, setHoaDonList] = useState<HoaDon[]>([]);
+  const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<string>('all');
-
-  // Bộ lọc riêng cho thẻ "Tiền cò (80%)"
-  const [tienCoMonthFilter, setTienCoMonthFilter] = useState<string>('all');
-  const [tienCoYearFilter, setTienCoYearFilter] = useState<string>('all');
-
-  // Bộ lọc riêng cho thẻ "Tiền thực tế (20%)"
-  const [tienTTMonthFilter, setTienTTMonthFilter] = useState<string>('all');
-  const [tienTTYearFilter, setTienTTYearFilter] = useState<string>('all');
+  const [toaNhaFilter, setToaNhaFilter] = useState<string>('all');
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingThanhToan, setEditingThanhToan] = useState<ThanhToanPopulated | null>(null);
@@ -102,6 +108,7 @@ export default function ThanhToanPage() {
         if (cachedData) {
           setThanhToanList(cachedData.thanhToanList || []);
           setHoaDonList(cachedData.hoaDonList || []);
+          setToaNhaList(cachedData.toaNhaList || []);
           setLoading(false);
           return;
         }
@@ -118,10 +125,17 @@ const hoaDonResponse = await fetch('/api/hoa-don?limit=1000');
 const hoaDonData = hoaDonResponse.ok ? await hoaDonResponse.json() : { data: [] };
 const hoaDons = hoaDonData.data || [];
 setHoaDonList(hoaDons);
+
+// Fetch toa nha từ API để phục vụ bộ lọc theo tòa nhà
+const toaNhaResponse = await fetch('/api/toa-nha?limit=1000');
+const toaNhaData = toaNhaResponse.ok ? await toaNhaResponse.json() : { data: [] };
+const toaNhas = toaNhaData.data || [];
+setToaNhaList(toaNhas);
       
       cache.setCache({
         thanhToanList: thanhToans,
         hoaDonList: hoaDons,
+        toaNhaList: toaNhas,
       });
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -162,46 +176,46 @@ setHoaDonList(hoaDons);
                        (dateFilter === 'today' && isToday(thanhToan.ngayThanhToan)) ||
                        (dateFilter === 'week' && isThisWeek(thanhToan.ngayThanhToan)) ||
                        (dateFilter === 'month' && isThisMonth(thanhToan.ngayThanhToan));
+    const matchesToaNha = toaNhaFilter === 'all' || getToaNhaIdFromThanhToan(thanhToan) === toaNhaFilter;
     
-    return matchesSearch && matchesMethod && matchesDate;
+    return matchesSearch && matchesMethod && matchesDate && matchesToaNha;
   });
 
 const doanhThuThanhToan = thanhToanList.filter(thanhToan => {
   const ngay = new Date(thanhToan.ngayThanhToan);
   const matchesMonth = monthFilter === 'all' || (ngay.getMonth() + 1).toString() === monthFilter;
   const matchesYear = yearFilter === 'all' || ngay.getFullYear().toString() === yearFilter;
-  return matchesMonth && matchesYear;
+  const matchesToaNha = toaNhaFilter === 'all' || getToaNhaIdFromThanhToan(thanhToan) === toaNhaFilter;
+  return matchesMonth && matchesYear && matchesToaNha;
 });
 
-// Danh sách lọc riêng cho thẻ "Tiền cò (80%)"
-const doanhThuTienCo = thanhToanList.filter(thanhToan => {
-  const ngay = new Date(thanhToan.ngayThanhToan);
-  const matchesMonth = tienCoMonthFilter === 'all' || (ngay.getMonth() + 1).toString() === tienCoMonthFilter;
-  const matchesYear = tienCoYearFilter === 'all' || ngay.getFullYear().toString() === tienCoYearFilter;
-  return matchesMonth && matchesYear;
-});
+// Lấy tổng tiền cọc theo từng HỢP ĐỒNG DUY NHẤT (không nhân theo số dòng thanh toán/tháng)
+// Lưu ý: tienCoc lấy từ hopDong (không phải phong) vì mỗi hợp đồng có tienCoc riêng,
+// tránh trường hợp phòng đổi khách/hợp đồng mới khiến số liệu sai lệch.
+// Tiền cò (80%) và Tiền thực tế (20%) tính trên TOÀN BỘ tiền cọc, không chia theo tháng/năm.
+const tinhTongTienCocDuyNhat = (list: ThanhToanPopulated[]) => {
+  const seenHopDong = new Set<string>();
+  let tongTienCoc = 0;
+  list.forEach((t) => {
+    const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
+    const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+    const hopDongId = hopDongInfo?._id;
+    if (hopDongId && !seenHopDong.has(hopDongId)) {
+      seenHopDong.add(hopDongId);
+      tongTienCoc += hopDongInfo?.tienCoc || 0;
+    }
+  });
+  return tongTienCoc;
+};
 
-// Danh sách lọc riêng cho thẻ "Tiền thực tế (20%)"
-const doanhThuTienTT = thanhToanList.filter(thanhToan => {
-  const ngay = new Date(thanhToan.ngayThanhToan);
-  const matchesMonth = tienTTMonthFilter === 'all' || (ngay.getMonth() + 1).toString() === tienTTMonthFilter;
-  const matchesYear = tienTTYearFilter === 'all' || ngay.getFullYear().toString() === tienTTYearFilter;
-  return matchesMonth && matchesYear;
-});
+// Áp bộ lọc tòa nhà vào danh sách dùng để tính tiền cọc/tiền cò/tiền thực tế
+const thanhToanTheoToaNha = thanhToanList.filter(thanhToan =>
+  toaNhaFilter === 'all' || getToaNhaIdFromThanhToan(thanhToan) === toaNhaFilter
+);
 
-const tongTienCo = doanhThuTienCo.reduce((sum, t) => {
-  const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
-  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-  const giaThue = phongInfo?.giaThue || 0;
-  return sum + giaThue * 0.8;
-}, 0);
-
-const tongTienThucTe = doanhThuTienTT.reduce((sum, t) => {
-  const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon as HoaDon : null;
-  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-  const giaThue = phongInfo?.giaThue || 0;
-  return sum + giaThue * 0.2;
-}, 0);
+const tongTienCocToanBo = tinhTongTienCocDuyNhat(thanhToanTheoToaNha);
+const tongTienCo = tongTienCocToanBo * 0.8;
+const tongTienThucTe = tongTienCocToanBo * 0.2;
 
 const tongTienTheoThang = doanhThuThanhToan.reduce((sum, t) => sum + t.soTien, 0);
   const getMethodBadge = (method: string) => {
@@ -388,38 +402,7 @@ const getYearOptions = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-green-600">Tiền cò (80%)</p>
-
-              <div className="flex items-center gap-1.5 mt-1.5 mb-1">
-                <Select value={tienCoMonthFilter} onValueChange={setTienCoMonthFilter}>
-                  <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Tháng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
-                    {getMonthOptions().map(month => (
-                      <SelectItem key={month} value={month.toString()} className="text-xs">
-                        Tháng {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={tienCoYearFilter} onValueChange={setTienCoYearFilter}>
-                  <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Năm" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
-                    {getYearOptions().map(year => (
-                      <SelectItem key={year} value={year.toString()} className="text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-2xl font-bold text-green-700 mt-1">{formatCurrency(tongTienCo)}</p>
+              <p className="text-2xl font-bold text-green-700 mt-2">{formatCurrency(tongTienCo)}</p>
             </div>
             <div className="bg-green-100 p-2 rounded-lg">
               <CreditCard className="h-5 w-5 text-green-600 flex-shrink-0" />
@@ -431,38 +414,7 @@ const getYearOptions = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-blue-600">Tiền thực tế (20%)</p>
-
-              <div className="flex items-center gap-1.5 mt-1.5 mb-1">
-                <Select value={tienTTMonthFilter} onValueChange={setTienTTMonthFilter}>
-                  <SelectTrigger className="h-6 w-[84px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Tháng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Cả năm</SelectItem>
-                    {getMonthOptions().map(month => (
-                      <SelectItem key={month} value={month.toString()} className="text-xs">
-                        Tháng {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={tienTTYearFilter} onValueChange={setTienTTYearFilter}>
-                  <SelectTrigger className="h-6 w-[76px] text-xs px-2 bg-white">
-                    <SelectValue placeholder="Năm" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Tất cả</SelectItem>
-                    {getYearOptions().map(year => (
-                      <SelectItem key={year} value={year.toString()} className="text-xs">
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-2xl font-bold text-blue-700 mt-1">{formatCurrency(tongTienThucTe)}</p>
+              <p className="text-2xl font-bold text-blue-700 mt-2">{formatCurrency(tongTienThucTe)}</p>
             </div>
             <div className="bg-blue-100 p-2 rounded-lg">
               <CreditCard className="h-5 w-5 text-blue-600 flex-shrink-0" />
@@ -533,6 +485,13 @@ const getYearOptions = () => {
             onMethodChange={setMethodFilter}
             dateFilter={dateFilter}
             onDateChange={setDateFilter}
+            monthFilter={monthFilter}
+            onMonthChange={setMonthFilter}
+            yearFilter={yearFilter}
+            onYearChange={setYearFilter}
+            toaNhaList={toaNhaList}
+            toaNhaFilter={toaNhaFilter}
+            onToaNhaChange={setToaNhaFilter}
           />
         </CardContent>
       </Card>
@@ -579,6 +538,19 @@ const getYearOptions = () => {
               </SelectContent>
             </Select>
           </div>
+          <Select value={toaNhaFilter} onValueChange={setToaNhaFilter}>
+            <SelectTrigger className="text-sm bg-gray-50 border-gray-300">
+              <SelectValue placeholder="Tòa nhà" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-sm">Tất cả tòa nhà</SelectItem>
+              {toaNhaList.map((toaNha) => (
+                <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
+                  {toaNha.tenToaNha}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Mobile Card List */}

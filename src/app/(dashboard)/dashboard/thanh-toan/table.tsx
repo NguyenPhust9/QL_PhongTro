@@ -57,6 +57,8 @@ import {
   VisibilityState,
 } from "@tanstack/react-table"
 import { toast } from "sonner"
+import * as XLSX from "xlsx"
+
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -86,7 +88,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { HoaDon } from '@/types'
+import type { HoaDon, ToaNha } from '@/types'
 import type { ThanhToanPopulated } from './page'
 
 // Helper functions
@@ -165,6 +167,17 @@ const getHoaDonInfo = (hoaDon: string | HoaDon | null, hoaDonList: HoaDon[]) => 
     return hoaDonItem?.maHoaDon || 'N/A'
   }
   return 'N/A'
+}
+
+// Lấy id tòa nhà từ một thanh toán (đi qua hoaDon -> phong -> toaNha)
+const getToaNhaIdFromThanhToan = (thanhToan: ThanhToanPopulated): string | null => {
+  const hoaDonInfo = thanhToan.hoaDon && typeof thanhToan.hoaDon === 'object' ? thanhToan.hoaDon : null
+  const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null
+  if (!phongInfo) return null
+  const toaNha = phongInfo.toaNha
+  if (!toaNha) return null
+  if (typeof toaNha === 'object') return toaNha._id || null
+  return toaNha
 }
 
 const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated>[] => [
@@ -265,57 +278,58 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     ),
   },
   {
-  id: "tienCo",
-  header: () => <div className="text-right">Tiền cò (80%)</div>,
-  cell: ({ row }) => {
-    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const giaThue = phongInfo?.giaThue || 0;
-    return (
-      <div className="text-right text-sm">
-        {formatCurrency(giaThue * 0.8)}
-      </div>
-    );
+    id: "tienCo",
+    header: () => <div className="text-right">Tiền cò (80%)</div>,
+    cell: ({ row }) => {
+      // Tiền cọc lấy từ hopDong (mỗi hợp đồng có tienCoc riêng), KHÔNG lấy từ phong
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+      const tienCoc = hopDongInfo?.tienCoc || 0;
+      return (
+        <div className="text-right text-sm">
+          {formatCurrency(tienCoc * 0.8)}
+        </div>
+      );
+    },
   },
-},
-{
-  id: "tienThucTe",
-  header: () => <div className="text-right">Tiền thực tế (20%)</div>,
-  cell: ({ row }) => {
-    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const giaThue = phongInfo?.giaThue || 0;
-    return (
-      <div className="text-right text-sm">
-        {formatCurrency(giaThue * 0.2)}
-      </div>
-    );
+  {
+    id: "tienThucTe",
+    header: () => <div className="text-right">Tiền thực tế (20%)</div>,
+    cell: ({ row }) => {
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+      const tienCoc = hopDongInfo?.tienCoc || 0;
+      return (
+        <div className="text-right text-sm">
+          {formatCurrency(tienCoc * 0.2)}
+        </div>
+      );
+    },
   },
-},
   {
     accessorKey: "phuongThuc",
     header: "Phương thức",
     cell: ({ row }) => getMethodBadge(row.original.phuongThuc),
   },
- {
-  id: "tienCoc",
-  header: () => <div className="text-right">Tiền cọc</div>,
-  cell: ({ row }) => {
-    const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-    const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-    const tienCoc = phongInfo?.tienCoc
+  {
+    id: "tienCoc",
+    header: () => <div className="text-right">Tiền cọc</div>,
+    cell: ({ row }) => {
+      const hoaDonInfo = row.original.hoaDon && typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null;
+      const tienCoc = hopDongInfo?.tienCoc
 
-    if (tienCoc === undefined || tienCoc === null) {
-      return <div className="text-right text-muted-foreground">-</div>
-    }
+      if (tienCoc === undefined || tienCoc === null) {
+        return <div className="text-right text-muted-foreground">-</div>
+      }
 
-    return (
-      <div className="text-right text-sm font-medium">
-        {formatCurrency(tienCoc)}
-      </div>
-    )
+      return (
+        <div className="text-right text-sm font-medium">
+          {formatCurrency(tienCoc)}
+        </div>
+      )
+    },
   },
-},
   {
     accessorKey: "ngayThanhToan",
     header: "Ngày thanh toán",
@@ -421,6 +435,10 @@ type ThanhToanDataTableProps = ThanhToanTableProps & {
   onMonthChange?: (value: string) => void
   yearFilter?: string
   onYearChange?: (value: string) => void
+  // Bộ lọc tòa nhà
+  toaNhaList?: ToaNha[]
+  toaNhaFilter?: string
+  onToaNhaChange?: (value: string) => void
 }
 
 // Helper tạo danh sách tháng/năm cho bộ lọc
@@ -440,6 +458,9 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
     onMonthChange,
     yearFilter,
     onYearChange,
+    toaNhaList,
+    toaNhaFilter,
+    onToaNhaChange,
     ...tableProps
   } = props
   const [data, setData] = React.useState(() => initialData)
@@ -458,33 +479,42 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
   // Giá trị đang chọn trong Select (chưa áp dụng lọc)
   const [monthSelectValue, setMonthSelectValue] = React.useState(monthFilter || 'all')
   const [yearSelectValue, setYearSelectValue] = React.useState(yearFilter || 'all')
+  const [toaNhaSelectValue, setToaNhaSelectValue] = React.useState(toaNhaFilter || 'all')
   // Giá trị đã được áp dụng (bấm OK) - dùng để lọc bảng thực sự
   const [appliedMonth, setAppliedMonth] = React.useState(monthFilter || 'all')
   const [appliedYear, setAppliedYear] = React.useState(yearFilter || 'all')
+  const [appliedToaNha, setAppliedToaNha] = React.useState(toaNhaFilter || 'all')
 
   // Sync data when prop changes
   React.useEffect(() => {
     setData(initialData)
   }, [initialData])
 
-  // Lọc dữ liệu theo tháng/năm (dựa trên ngayThanhToan) trước khi đưa vào bảng
-  // Chỉ áp dụng giá trị đã bấm OK (appliedMonth/appliedYear), không lọc theo giá trị đang chọn dở
-  const filteredByMonthYear = React.useMemo(() => {
+  // Lọc dữ liệu theo tháng/năm (dựa trên ngayThanhToan) và tòa nhà trước khi đưa vào bảng
+  // Chỉ áp dụng giá trị đã bấm OK (applied...), không lọc theo giá trị đang chọn dở
+  const filteredData = React.useMemo(() => {
     return data.filter((thanhToan) => {
       const ngay = new Date(thanhToan.ngayThanhToan)
       const matchesMonth =
         !appliedMonth || appliedMonth === 'all' || (ngay.getMonth() + 1).toString() === appliedMonth
       const matchesYear =
         !appliedYear || appliedYear === 'all' || ngay.getFullYear().toString() === appliedYear
-      return matchesMonth && matchesYear
+
+      const toaNhaId = getToaNhaIdFromThanhToan(thanhToan)
+      const matchesToaNha =
+        !appliedToaNha || appliedToaNha === 'all' || toaNhaId === appliedToaNha
+
+      return matchesMonth && matchesYear && matchesToaNha
     })
-  }, [data, appliedMonth, appliedYear])
+  }, [data, appliedMonth, appliedYear, appliedToaNha])
 
   const handleApplyFilter = () => {
     setAppliedMonth(monthSelectValue)
     setAppliedYear(yearSelectValue)
+    setAppliedToaNha(toaNhaSelectValue)
     onMonthChange?.(monthSelectValue)
     onYearChange?.(yearSelectValue)
+    onToaNhaChange?.(toaNhaSelectValue)
   }
 
   const columns = React.useMemo(() => createColumns(tableProps), [tableProps])
@@ -497,12 +527,12 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => filteredByMonthYear?.map(({ _id }) => _id!) || [],
-    [filteredByMonthYear]
+    () => filteredData?.map(({ _id }) => _id!) || [],
+    [filteredData]
   )
 
   const table = useReactTable({
-    data: filteredByMonthYear,
+    data: filteredData,
     columns,
     state: {
       sorting,
@@ -536,14 +566,55 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
       })
     }
   }
+  const handleExportExcel = () => {
+    const exportData = filteredData.map((t) => {
+      const hoaDonInfo = t.hoaDon && typeof t.hoaDon === 'object' ? t.hoaDon : null
+      const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null
+      const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null
+      // Tiền cọc lấy từ hopDong (mỗi hợp đồng có tienCoc riêng), KHÔNG lấy từ phong
+      const hopDongInfo = hoaDonInfo && typeof (hoaDonInfo as any).hopDong === 'object' ? ((hoaDonInfo as any).hopDong as any) : null
+      const tienCoc = hopDongInfo?.tienCoc || 0
+      const phuongThucText =
+        t.phuongThuc === 'tienMat' ? 'Tiền mặt' :
+        t.phuongThuc === 'chuyenKhoan' ? 'Chuyển khoản' :
+        t.phuongThuc === 'viDienTu' ? 'Ví điện tử' : t.phuongThuc
 
+      return {
+        'Hóa đơn': getHoaDonInfo(t.hoaDon, tableProps.hoaDonList),
+        'Phòng': phongInfo?.maPhong || 'N/A',
+        'Người đại diện': khachThueInfo?.hoTen || 'N/A',
+        'Số tiền': t.soTien,
+        'Tiền cò (80%)': tienCoc * 0.8,
+        'Tiền thực tế (20%)': tienCoc * 0.2,
+        'Phương thức': phuongThucText,
+        'Tiền cọc': tienCoc,
+        'Ngày thanh toán': new Date(t.ngayThanhToan).toLocaleDateString('vi-VN'),
+        'Ghi chú': t.ghiChu || '-',
+      }
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    worksheet['!cols'] = [
+      { wch: 16 }, { wch: 10 }, { wch: 20 }, { wch: 14 },
+      { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 24 },
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Thanh toán')
+
+    const today = new Date().toISOString().split('T')[0]
+    XLSX.writeFile(workbook, `danh-sach-thanh-toan_${today}.xlsx`)
+
+    toast.success(`Đã xuất ${exportData.length} giao dịch ra file Excel`)
+  }
   const selectedCount = table.getFilteredSelectedRowModel().rows.length
 
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         {/* Tìm kiếm và Bộ lọc bên trái */}
-        <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 flex-1 w-full">
           <div className="flex-1 sm:max-w-xs">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -555,6 +626,22 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
               />
             </div>
           </div>
+
+          {/* Bộ lọc tòa nhà */}
+          <Select value={toaNhaSelectValue} onValueChange={setToaNhaSelectValue}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Tòa nhà" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả tòa nhà</SelectItem>
+              {toaNhaList?.map((toaNha) => (
+                <SelectItem key={toaNha._id} value={toaNha._id!}>
+                  {toaNha.tenToaNha}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={monthSelectValue} onValueChange={setMonthSelectValue}>
             <SelectTrigger className="w-full sm:w-[120px]">
               <SelectValue placeholder="Tháng" />
@@ -593,6 +680,16 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
 
         {/* Tùy chỉnh cột bên phải */}
         <div className="flex items-center gap-2">
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            className="text-green-700 border-green-200 hover:bg-green-50"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            <span className="hidden lg:inline">Xuất Excel</span>
+            <span className="lg:hidden">Excel</span>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">

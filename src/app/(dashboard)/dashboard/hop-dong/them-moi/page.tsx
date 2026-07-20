@@ -64,6 +64,30 @@ const formatDateTyping = (raw: string) => {
   if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 };
+
+// Tự động sinh mã hợp đồng tiếp theo dựa trên mã lớn nhất hiện có,
+// ví dụ đang có HD038 -> tự điền HD039. Nếu chưa có hợp đồng nào -> HD001.
+// Giữ nguyên số lượng chữ số của mã lớn nhất tìm được (vd: HD007 -> HD008,
+// HD0099 -> HD0100) để không phá vỡ định dạng đang dùng.
+const generateNextMaHopDong = (hopDongList: { maHopDong: string }[]) => {
+  let maxNumber = 0;
+  let digitLength = 3; // mặc định 3 chữ số (HD001) nếu chưa có dữ liệu
+
+  hopDongList.forEach((hd) => {
+    const match = hd.maHopDong?.match(/^HD(\d+)$/i);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNumber) {
+        maxNumber = num;
+        digitLength = match[1].length;
+      }
+    }
+  });
+
+  const nextNumber = maxNumber + 1;
+  return `HD${nextNumber.toString().padStart(digitLength, '0')}`;
+};
+
 export default function ThemMoiHopDongPage() {
   const router = useRouter();
   const [phongList, setPhongList] = useState<Phong[]>([]);
@@ -147,6 +171,15 @@ export default function ThemMoiHopDongPage() {
       if (khachThueResponse.ok) {
         const khachThueData = await khachThueResponse.json();
         setKhachThueList(khachThueData.data || []);
+      }
+
+      // Fetch hop dong data để tự động sinh mã hợp đồng tiếp theo
+      // (ví dụ đang có HD038 mới nhất -> tự điền sẵn HD039 vào form)
+      const hopDongResponse = await fetch('/api/hop-dong?limit=1000');
+      if (hopDongResponse.ok) {
+        const hopDongData = await hopDongResponse.json();
+        const nextMa = generateNextMaHopDong(hopDongData.data || []);
+        setFormData(prev => ({ ...prev, maHopDong: nextMa }));
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -310,6 +343,9 @@ export default function ThemMoiHopDongPage() {
                   required
                   className="text-sm"
                 />
+                <span className="text-[10px] md:text-xs text-muted-foreground">
+                  Tự động sinh theo mã lớn nhất hiện có, bạn có thể chỉnh sửa nếu cần
+                </span>
               </div>
               
               <div className="space-y-2">
@@ -782,4 +818,3 @@ export default function ThemMoiHopDongPage() {
     </div>
   );
 }
-

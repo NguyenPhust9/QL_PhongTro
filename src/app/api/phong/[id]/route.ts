@@ -19,6 +19,8 @@ const phongSchema = z.object({
   anhPhong: z.array(z.string()).optional(),
   tienNghi: z.array(z.string()).optional(),
   soNguoiToiDa: z.number().min(1, 'Số người tối đa phải lớn hơn 0').max(10, 'Số người tối đa không được quá 10'),
+  // Cho phép admin chọn tay trạng thái phòng khi sửa
+  trangThai: z.enum(['trong', 'daDat', 'dangThue', 'baoTri']).optional(),
 });
 
 export async function GET(
@@ -38,8 +40,10 @@ export async function GET(
     await dbConnect();
     const { id } = await params;
 
-    // Cập nhật trạng thái phòng trước khi trả về
-    await updatePhongStatus(id);
+    // Lưu ý: KHÔNG gọi updatePhongStatus(id) ở đây nữa.
+    // Nếu tự động tính lại mỗi lần tải trang, trạng thái admin chọn tay
+    // (VD: "Đang thuê", "Bảo trì") sẽ bị ghi đè ngay khi F5 nếu phòng
+    // chưa có hợp đồng hoạt động khớp với lựa chọn đó.
 
     const phong = await Phong.findById(id)
       .populate('toaNha', 'tenToaNha diaChi');
@@ -101,7 +105,8 @@ export async function PUT(
         anhPhong: validatedData.anhPhong || [],
         videoPhong: validatedData.videoPhong || [],
         tienNghi: validatedData.tienNghi || [],
-        // Trạng thái sẽ được cập nhật tự động dựa trên hợp đồng
+        // trangThai lấy trực tiếp từ validatedData (admin sửa tay ở đây được tôn trọng,
+        // KHÔNG bị ghi đè tự động sau khi lưu)
       },
       { new: true, runValidators: true }
     ).populate('toaNha', 'tenToaNha diaChi');
@@ -113,16 +118,14 @@ export async function PUT(
       );
     }
 
-    // Cập nhật trạng thái dựa trên hợp đồng sau khi cập nhật phòng
-    await updatePhongStatus(id);
-
-    // Lấy lại dữ liệu với trạng thái đã cập nhật
-    const updatedPhong = await Phong.findById(id)
-      .populate('toaNha', 'tenToaNha diaChi');
+    // Lưu ý: KHÔNG gọi updatePhongStatus(id) ở đây nữa.
+    // Trạng thái phòng khi admin sửa tay trong form sẽ được giữ nguyên theo lựa chọn.
+    // Việc tự động cập nhật trạng thái theo hợp đồng (tạo/hủy/gia hạn hợp đồng)
+    // vẫn diễn ra bình thường ở các route liên quan đến hợp đồng.
 
     return NextResponse.json({
       success: true,
-      data: updatedPhong,
+      data: phong,
       message: 'Phòng đã được cập nhật thành công',
     });
 
