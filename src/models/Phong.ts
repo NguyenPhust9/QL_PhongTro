@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IPhong extends Document {
   maPhong: string;
   toaNha: mongoose.Types.ObjectId;
-  tang: number;
+  tang: string;
   dienTich: number;
   giaThue: number;
   tienCoc: number;
@@ -32,10 +32,10 @@ maPhong: {
     required: [true, 'Tòa nhà là bắt buộc']
   },
   tang: {
-    type: Number,
-    required: [true, 'Tầng là bắt buộc'],
-    min: [0, 'Tầng phải lớn hơn hoặc bằng 0']
-  },
+  type: String,
+  required: [true, 'Tầng là bắt buộc'],
+  trim: true
+},
   dienTich: {
     type: Number,
     required: [true, 'Diện tích là bắt buộc'],

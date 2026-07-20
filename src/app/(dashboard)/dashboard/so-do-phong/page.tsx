@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 interface Phong {
   _id: string;
   maPhong: string;
-  tang: number;
+  tang: string;
   trangThai: 'trong' | 'daDat' | 'dangThue' | 'baoTri';
   giaThue: number;
   dienTich: number;
@@ -204,16 +204,16 @@ export default function SoDoPhongPage() {
   });
 
   // === GOM NHÓM THEO TÒA NHÀ (rồi tới tầng) ===
-  const phongTheoToaNha = filteredPhong.reduce((acc, phong) => {
+ const phongTheoToaNha = filteredPhong.reduce((acc, phong) => {
     const toaId = phong.toaNha?._id || 'unknown';
-    if (!acc[toaId]) {
+const tangKey = Number(phong.tang);    if (!acc[toaId]) {
       acc[toaId] = {
         tenToaNha: phong.toaNha?.tenToaNha || 'Chưa rõ tòa',
         tangMap: {} as Record<number, Phong[]>,
       };
     }
-    if (!acc[toaId].tangMap[phong.tang]) acc[toaId].tangMap[phong.tang] = [];
-    acc[toaId].tangMap[phong.tang].push(phong);
+    if (!acc[toaId].tangMap[tangKey]) acc[toaId].tangMap[tangKey] = [];
+    acc[toaId].tangMap[tangKey].push(phong);
     return acc;
   }, {} as Record<string, { tenToaNha: string; tangMap: Record<number, Phong[]> }>);
 
@@ -362,8 +362,8 @@ export default function SoDoPhongPage() {
           {orderedToaNhaIds.map((toaId) => {
             const { tenToaNha, tangMap } = phongTheoToaNha[toaId];
             const tangs = Object.keys(tangMap).map(Number).sort((a, b) => b - a);
-            const roomsInToa = tangs.flatMap((t) => tangMap[t]);
-            const toaStats = {
+const roomsInToa = tangs.flatMap((t) => tangMap[t] ?? []);          
+  const toaStats = {
               total: roomsInToa.length,
               trong: roomsInToa.filter((p) => p.trangThai === 'trong').length,
               dangThue: roomsInToa.filter((p) => p.trangThai === 'dangThue').length,

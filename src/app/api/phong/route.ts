@@ -11,7 +11,7 @@ import { z } from 'zod';
 const phongSchema = z.object({
   maPhong: z.string().min(1, 'Mã phòng là bắt buộc'),
   toaNha: z.string().min(1, 'Tòa nhà là bắt buộc'),
-  tang: z.number().min(0, 'Tầng phải lớn hơn hoặc bằng 0'),
+  tang: z.string().min(1, 'Tầng là bắt buộc'),
   dienTich: z.number().min(1, 'Diện tích phải lớn hơn 0'),
   giaThue: z.number().min(0, 'Giá thuê phải lớn hơn hoặc bằng 0'),
   tienCoc: z.number().min(0, 'Tiền cọc phải lớn hơn hoặc bằng 0'),

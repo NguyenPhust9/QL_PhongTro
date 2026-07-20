@@ -856,7 +856,7 @@ function PhongForm({
   const [formData, setFormData] = useState({
     maPhong: phong?.maPhong || '',
     toaNha: phong?.toaNha ? getToaNhaId(phong.toaNha) : '',
-    tang: phong?.tang || 1,
+    tang: phong?.tang || '',
     dienTich: phong?.dienTich || 0,
     giaThue: phong?.giaThue || 0,
     tienCoc: phong?.tienCoc || 0,
@@ -876,7 +876,7 @@ function PhongForm({
       setFormData({
         maPhong: phong.maPhong || '',
         toaNha: toaNhaId,
-        tang: phong.tang || 1,
+        tang: phong.tang || '',
         dienTich: phong.dienTich || 0,
         giaThue: phong.giaThue || 0,
         tienCoc: phong.tienCoc || 0,
@@ -891,7 +891,7 @@ function PhongForm({
       setFormData({
         maPhong: '',
         toaNha: '',
-        tang: 1,
+        tang: '',
         dienTich: 0,
         giaThue: 0,
         tienCoc: 0,
@@ -1064,9 +1064,10 @@ function PhongForm({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tang" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Tầng</Label>
-              <Input id="tang" type="number" min="0" value={formData.tang}
-                onChange={(e) => setFormData(prev => ({ ...prev, tang: parseInt(e.target.value) || 0 }))}
-                required className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500" />
+             <Input id="tang" type="text" value={formData.tang}
+  onChange={(e) => setFormData(prev => ({ ...prev, tang: e.target.value }))}
+  required placeholder="VD: G, Hầm, B1, B2, 1, 2..."
+  className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus:ring-orange-500 focus:border-orange-500" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dienTich" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Diện tích (m²)</Label>
