@@ -8,7 +8,11 @@ import SuCo from '@/models/SuCo';
 import HopDong from '@/models/HopDong';
 import ThanhToan from '@/models/ThanhToan';
 import ToaNha from '@/models/ToaNha';
+import KhachThue from '@/models/KhachThue';
 import mongoose from 'mongoose';
+
+// Serverless function phải tự đăng ký model được tham chiếu bởi populate.
+void KhachThue;
 
 export async function GET(request: NextRequest) {
   try {

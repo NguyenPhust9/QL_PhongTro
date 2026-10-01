@@ -3,11 +3,16 @@ import connectToDatabase from '@/lib/mongodb';
 import HoaDon from '@/models/HoaDon';
 import HopDong from '@/models/HopDong';
 import KhachThue from '@/models/KhachThue';
+import Phong from '@/models/Phong';
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PhiDichVu } from '@/types';
 import { DON_GIA_NUOC_THEO_NGUOI } from '@/lib/constants';
+
+// Giữ các model được đăng ký trong cùng serverless function trước khi populate.
+void KhachThue;
+void Phong;
 
 type HoaDonStatusFields = {
   conLai: number;
