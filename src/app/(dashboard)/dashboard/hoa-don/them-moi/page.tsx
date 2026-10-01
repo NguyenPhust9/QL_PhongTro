@@ -450,20 +450,26 @@ export default function ThemMoiHoaDonPage() {
                     <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mb-1">
                       {activeHopDongList.length} hợp đồng hoạt động
                     </div>
-                    <Select
-                      value={formData.hopDong}
-                      onValueChange={(value) => {
-                        setFormData(prev => ({ ...prev, hopDong: value }));
-                        setHopDongSearchTerm('');
-                      }}
-                      onOpenChange={(open) => {
-                        if (!open) setHopDongSearchTerm('');
-                      }}
-                    >
-                      <SelectTrigger className="h-10 text-sm">
-                        <SelectValue placeholder="Chọn hợp đồng" />
-                      </SelectTrigger>
-                      <SelectContent className="max-w-[500px]">
+                    <div className="w-full min-w-0">
+                      <Select
+                        value={formData.hopDong}
+                        onValueChange={(value) => {
+                          setFormData(prev => ({ ...prev, hopDong: value }));
+                          setHopDongSearchTerm('');
+                        }}
+                        onOpenChange={(open) => {
+                          if (!open) setHopDongSearchTerm('');
+                        }}
+                      >
+                        <SelectTrigger className="h-10 w-full min-w-0 text-sm">
+                          <SelectValue placeholder="Chọn hợp đồng" />
+                        </SelectTrigger>
+                        <SelectContent
+                          position="popper"
+                          align="start"
+                          sideOffset={4}
+                          className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]"
+                        >
                         {/* Ô tìm kiếm nhanh theo phòng / tên khách / mã hợp đồng */}
                         <div
                           className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 bg-white p-2 border-b"
@@ -477,7 +483,7 @@ export default function ThemMoiHoaDonPage() {
                               value={hopDongSearchTerm}
                               onChange={(e) => setHopDongSearchTerm(e.target.value)}
                               onClick={(e) => e.stopPropagation()}
-                              className="h-8 pl-7 text-sm"
+                              className="h-8 w-full pl-7 text-sm"
                             />
                           </div>
                         </div>
@@ -515,32 +521,33 @@ export default function ThemMoiHoaDonPage() {
                                 <SelectItem 
                                   key={hopDong._id} 
                                   value={hopDong._id!}
-                                  className="cursor-pointer"
+                                  className="cursor-pointer overflow-hidden"
                                 >
-                                  <div className="flex flex-col gap-1 py-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-blue-700">{hopDong.maHopDong}</span>
+                                  <div className="min-w-0 flex-1 py-1">
+                                    <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                                      <span className="shrink-0 font-semibold text-blue-700">{hopDong.maHopDong}</span>
                                       <span className="text-gray-400">•</span>
-                                      <span className="text-sm font-medium text-gray-700">Phòng {phongName}</span>
+                                      <span className="shrink-0 text-sm font-medium text-gray-700">Phòng {phongName}</span>
                                       {toaNhaName !== 'N/A' && (
                                         <>
                                           <span className="text-gray-400">•</span>
-                                          <span className="text-sm text-gray-600">{toaNhaName}</span>
+                                          <span className="truncate text-sm text-gray-600">{toaNhaName}</span>
                                         </>
                                       )}
                                     </div>
-                                    <div className="flex items-center gap-3 text-xs text-gray-500">
-                                      <span>👤 {nguoiDaiDienName}</span>
+                                    <div className="mt-1 flex min-w-0 items-center gap-3 overflow-hidden text-xs text-gray-500">
+                                      <span className="truncate">👤 {nguoiDaiDienName}</span>
                                       <span className="text-gray-400">•</span>
-                                      <span>📅 {ngayBatDau !== 'N/A' && ngayKetThuc !== 'N/A' ? `${ngayBatDau} → ${ngayKetThuc}` : 'Chưa có thông tin ngày'}</span>
+                                      <span className="shrink-0">📅 {ngayBatDau !== 'N/A' && ngayKetThuc !== 'N/A' ? `${ngayBatDau} → ${ngayKetThuc}` : 'Chưa có thông tin ngày'}</span>
                                     </div>
                                   </div>
                                 </SelectItem>
                               );
                             })
                         )}
-                      </SelectContent>
-                    </Select>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
