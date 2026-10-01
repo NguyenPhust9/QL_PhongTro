@@ -260,7 +260,7 @@ const createColumns = (props: HoaDonTableProps): ColumnDef<HoaDon>[] => [
     accessorKey: "hanThanhToan",
     header: "Hạn thanh toán",
     cell: ({ row }) => {
-      const isLate = isOverdue(row.original.hanThanhToan)
+      const isLate = row.original.conLai > 0 && isOverdue(row.original.hanThanhToan)
       return (
         <div className="text-sm">
           <div className={isLate ? 'text-orange-600 font-medium' : ''}>

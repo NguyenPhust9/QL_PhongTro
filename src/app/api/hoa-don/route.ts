@@ -8,6 +8,27 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PhiDichVu } from '@/types';
 import { DON_GIA_NUOC_THEO_NGUOI } from '@/lib/constants';
+
+type HoaDonStatusFields = {
+  conLai: number;
+  daThanhToan: number;
+  hanThanhToan: Date | string;
+  trangThai: 'chuaThanhToan' | 'daThanhToanMotPhan' | 'daThanhToan' | 'quaHan';
+};
+
+function normalizeHoaDonStatus<T extends HoaDonStatusFields>(hoaDon: T): T {
+  if (hoaDon.conLai <= 0) {
+    hoaDon.trangThai = 'daThanhToan';
+  } else if (new Date(hoaDon.hanThanhToan) < new Date()) {
+    hoaDon.trangThai = 'quaHan';
+  } else if (hoaDon.daThanhToan > 0) {
+    hoaDon.trangThai = 'daThanhToanMotPhan';
+  } else {
+    hoaDon.trangThai = 'chuaThanhToan';
+  }
+  return hoaDon;
+}
+
 // GET - Lấy danh sách hóa đơn
 export async function GET(request: NextRequest) {
   try {
@@ -55,6 +76,7 @@ export async function GET(request: NextRequest) {
       if (hoaDonObj.chiSoNuocCuoiKy === undefined) {
         hoaDonObj.chiSoNuocCuoiKy = hoaDonObj.chiSoNuocBanDau;
       }
+      normalizeHoaDonStatus(hoaDonObj);
 
       return NextResponse.json({
         success: true,
@@ -101,7 +123,7 @@ export async function GET(request: NextRequest) {
       if (hoaDonObj.chiSoNuocCuoiKy === undefined) {
         hoaDonObj.chiSoNuocCuoiKy = hoaDonObj.chiSoNuocBanDau;
       }
-      return hoaDonObj;
+      return normalizeHoaDonStatus(hoaDonObj);
     });
 
     return NextResponse.json({
@@ -350,7 +372,6 @@ export async function PUT(request: NextRequest) {
       chiSoNuocCuoiKy,
       phiDichVu,
       daThanhToan,
-      trangThai,
       hanThanhToan,
       ghiChu,
       // Cho phép frontend gửi lên số tiền điện/nước đã sửa tay (manual override).
@@ -418,6 +439,20 @@ export async function PUT(request: NextRequest) {
 
     const tongTien = tienPhong + tienDienTinh + tienNuocTinh + (phiDichVu?.reduce((sum: number, phi: PhiDichVu) => sum + phi.gia, 0) || 0);
     const conLai = tongTien - daThanhToan;
+    const hanThanhToanDate = new Date(hanThanhToan);
+
+    // Trạng thái phải được suy ra từ số tiền còn lại. Hóa đơn đã trả đủ
+    // không được giữ trạng thái "quá hạn" chỉ vì ngày thanh toán đã qua.
+    let trangThaiTinh: 'chuaThanhToan' | 'daThanhToanMotPhan' | 'daThanhToan' | 'quaHan';
+    if (conLai <= 0) {
+      trangThaiTinh = 'daThanhToan';
+    } else if (hanThanhToanDate < new Date()) {
+      trangThaiTinh = 'quaHan';
+    } else if (daThanhToan > 0) {
+      trangThaiTinh = 'daThanhToanMotPhan';
+    } else {
+      trangThaiTinh = 'chuaThanhToan';
+    }
 
     const updatedHoaDon = await HoaDon.findByIdAndUpdate(
       id,
@@ -439,8 +474,8 @@ export async function PUT(request: NextRequest) {
         tongTien,
         daThanhToan,
         conLai,
-        trangThai,
-        hanThanhToan: new Date(hanThanhToan),
+        trangThai: trangThaiTinh,
+        hanThanhToan: hanThanhToanDate,
         ghiChu
       },
       { new: true }

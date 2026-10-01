@@ -167,20 +167,27 @@ export default function HoaDonPage() {
           setKhachThueList(cachedData.khachThueList || []);
           setToaNhaList(cachedData.toaNhaList || []);
           setLoading(false);
-          return;
+          return true;
         }
       }
       
       // Gọi song song 3 API thay vì tuần tự (hóa đơn, form-data, tòa nhà)
       // để tổng thời gian chờ chỉ còn max(A, B, C) thay vì A + B + C.
       const [hoaDonResponse, formDataResponse, toaNhaResponse] = await Promise.all([
-        fetch('/api/hoa-don?limit=1000'),
-        fetch('/api/hoa-don/form-data'),
-        fetch('/api/toa-nha?limit=100'),
+        fetch('/api/hoa-don?limit=1000', { cache: 'no-store' }),
+        fetch('/api/hoa-don/form-data', { cache: 'no-store' }),
+        fetch('/api/toa-nha?limit=100', { cache: 'no-store' }),
       ]);
 
+      // Không biến lỗi API thành danh sách rỗng: nếu làm vậy giao diện sẽ hiển thị
+      // "0 hóa đơn" dù request thực tế bị lỗi.
+      if (!hoaDonResponse.ok) {
+        const errorData = await hoaDonResponse.json().catch(() => null);
+        throw new Error(errorData?.message || `Không thể tải hóa đơn (HTTP ${hoaDonResponse.status})`);
+      }
+
       // Xử lý hóa đơn
-      const hoaDonData = hoaDonResponse.ok ? await hoaDonResponse.json() : { data: [] };
+      const hoaDonData = await hoaDonResponse.json();
       const hoaDons = hoaDonData.data || [];
       setHoaDonList(hoaDons);
 
@@ -216,8 +223,12 @@ export default function HoaDonPage() {
       } else {
         console.error('Failed to load form data:', formDataResponse.status);
       }
+      return true;
     } catch (error) {
       console.error('Error fetching data:', error);
+      const message = error instanceof Error ? error.message : 'Không thể tải dữ liệu hóa đơn';
+      toast.error(message);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -225,9 +236,14 @@ export default function HoaDonPage() {
 
   const handleRefresh = async () => {
     cache.setIsRefreshing(true);
-    await fetchData(true); // Force refresh
-    cache.setIsRefreshing(false);
-    toast.success('Đã tải dữ liệu mới nhất');
+    try {
+      const refreshed = await fetchData(true); // Force refresh
+      if (refreshed) {
+        toast.success('Đã tải dữ liệu mới nhất');
+      }
+    } finally {
+      cache.setIsRefreshing(false);
+    }
   };
 
  const filteredHoaDon = hoaDonList.filter(hoaDon => {
@@ -712,7 +728,9 @@ export default function HoaDonPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-orange-600">Quá hạn</p>
-              <p className="text-2xl font-bold text-orange-700 mt-1">{hoaDonList.filter(h => new Date(h.hanThanhToan) < new Date()).length}</p>
+              <p className="text-2xl font-bold text-orange-700 mt-1">
+                {hoaDonList.filter(h => h.conLai > 0 && new Date(h.hanThanhToan) < new Date()).length}
+              </p>
             </div>
             <div className="bg-orange-100 p-2 rounded-lg">
               <AlertCircle className="h-5 w-5 text-orange-600" />
