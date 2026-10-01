@@ -99,6 +99,7 @@ export default function ThemMoiHoaDonPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [hopDongSearchTerm, setHopDongSearchTerm] = useState('');
+  const [soNguoiODisplay, setSoNguoiODisplay] = useState('0');
 
   // Cờ đánh dấu "Thành tiền" điện/nước đã được người dùng sửa tay
   // Khi true, calculateTotal() sẽ KHÔNG tự tính đè lên giá trị đã nhập tay
@@ -200,6 +201,7 @@ export default function ThemMoiHoaDonPage() {
       const selectedHopDong = hopDongList.find(hd => hd._id === formData.hopDong);
       if (selectedHopDong) {
         console.log('Auto-filling form data from contract:', selectedHopDong);
+        const soNguoiMacDinh = (selectedHopDong as any)?.khachThueId?.length || 0;
         
         // Đổi hợp đồng thì reset chế độ sửa tay để tính lại tự động cho hợp đồng mới
         setDienManual(false);
@@ -213,8 +215,9 @@ export default function ThemMoiHoaDonPage() {
           phiDichVu: selectedHopDong.phiDichVu || [],
           chiSoDienBanDau: 0,
           // Gợi ý mặc định số người ở theo hợp đồng, người dùng vẫn có thể tự sửa
-          soNguoiO: (selectedHopDong as any)?.khachThueId?.length || 0,
+          soNguoiO: soNguoiMacDinh,
         }));
+        setSoNguoiODisplay(String(soNguoiMacDinh).replace('.', ','));
         
         fetchLatestElectricityReading(formData.hopDong, formData.thang, formData.nam);
       }
@@ -784,14 +787,26 @@ export default function ThemMoiHoaDonPage() {
                             <Label htmlFor="soNguoiO" className="text-sm whitespace-nowrap">Số người:</Label>
                             <Input
                               id="soNguoiO"
-                              type="number"
-                              min="0"
-                              value={formData.soNguoiO}
-                              onChange={(e) =>
-                                setFormData(prev => ({ ...prev, soNguoiO: Math.max(0, parseInt(e.target.value) || 0) }))
-                              }
+                              type="text"
+                              inputMode="decimal"
+                              value={soNguoiODisplay}
+                              onChange={(e) => {
+                                const rawValue = e.target.value.replace(/[^0-9,.]/g, '');
+                                setSoNguoiODisplay(rawValue);
+
+                                const normalizedValue = rawValue.replace(',', '.');
+                                const parsedValue = Number.parseFloat(normalizedValue);
+                                setNuocManual(false);
+                                setFormData(prev => ({
+                                  ...prev,
+                                  soNguoiO: Number.isFinite(parsedValue) ? Math.max(0, parsedValue) : 0,
+                                }));
+                              }}
+                              onBlur={() => {
+                                setSoNguoiODisplay(String(formData.soNguoiO).replace('.', ','));
+                              }}
                               className="h-8 w-20 text-center"
-                              placeholder="0"
+                              placeholder="0 hoặc 1,5"
                             />
                             <span className="text-xs text-gray-500">người</span>
                           </div>
